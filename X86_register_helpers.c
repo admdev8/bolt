@@ -1,4 +1,7 @@
 #include <windows.h>
+
+#include <assert.h>
+
 #include "X86_register.h"
 
 void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)

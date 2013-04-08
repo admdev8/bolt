@@ -9,6 +9,10 @@
 #include "logging.h"
 #include "x86_disas.h"
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 void set_or_clear_flag (CONTEXT * ctx, int flag, uint64_t cond);
 
 REG CONTEXT_get_SP (const CONTEXT * ctx);
@@ -67,3 +71,7 @@ BOOL is_B_cond (const CONTEXT * ctx);
 BOOL is_NB_cond (const CONTEXT * ctx);
 
 void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t);
+
+#ifdef  __cplusplus
+}
+#endif

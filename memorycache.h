@@ -9,9 +9,16 @@
 
 // Rationale: x86 emu testing mode should be supported (DryRunFlush())
 
+// TODO: здесь может быть также такой режим, когда все ф-ции будут работать, но на прямую, без кеша
+// т.н. cache bypass
+
 // change both if need
 #define PAGE_SIZE 4096
 #define LOG2_PAGE_SIZE 12
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 typedef struct _MemoryCacheElement
 {
@@ -61,3 +68,7 @@ BOOL MC_GetString (MemoryCache *mc, address adr, BOOL unicode, strbuf * out);
 void MC_Flush(MemoryCache* mc);
 BOOL MC_DryRunFlush(MemoryCache* mc);
 void MC_dump_state(fds *s, MemoryCache *mc);
+
+#ifdef  __cplusplus
+}
+#endif

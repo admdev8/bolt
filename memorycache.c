@@ -1,8 +1,8 @@
 #include "memorycache.h"
-//#include "printf-utils.h"
 #include "dmalloc.h"
 #include "rbtree.h"
 #include "stuff.h"
+#include <assert.h>
 
 MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, BOOL dont_read_from_quicksilver_places)
 {
@@ -54,6 +54,7 @@ MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
         
     rt=(MemoryCache*)DCALLOC(sizeof (MemoryCache), "MemoryCache"); 
     rt->PHDL=mc->PHDL;
+    rt->dont_read_from_quicksilver_places=mc->dont_read_from_quicksilver_places;
     rt->last_ptr_idx=-1;
     rt->_cache=rbtree_create(TRUE, "MemoryCache._cache", compare_size_t);
     rbtree_copy (mc->_cache, rt->_cache, key_copier, value_copier);
@@ -440,6 +441,24 @@ BOOL MC_DryRunFlush(MemoryCache *mc)
 
     DFREE (tmp);
     return rt;
+};
+
+// FIXME: invent a good name for it!
+static BOOL my_isprint (char a)
+{
+  if (a==0x0A)
+    return TRUE;
+
+  if (a==0x0D)
+    return TRUE;
+
+  if (a<0x20)
+    return FALSE;
+    
+  if (a>=0x7F)
+    return FALSE;
+
+  return TRUE;
 };
 
 // FIXME: slow

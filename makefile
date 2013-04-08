@@ -14,10 +14,13 @@ memorycache.obj: memorycache.c memorycache.h
 CONTEXT_utils.obj: CONTEXT_utils.c CONTEXT_utils.h
 	cl.exe CONTEXT_utils.c $(CL_OPTIONS)
 
-bolt.lib: X86_register_helpers.obj memorycache.obj CONTEXT_utils.obj
-	lib.exe X86_register_helpers.obj memorycache.obj CONTEXT_utils.obj /OUT:bolt.lib
+disas_utils.obj: disas_utils.c disas_utils.h
+	cl.exe disas_utils.c $(CL_OPTIONS)
 
-all: bolt.lib
+boltd.lib: X86_register_helpers.obj memorycache.obj CONTEXT_utils.obj disas_utils.obj
+	lib.exe X86_register_helpers.obj memorycache.obj CONTEXT_utils.obj disas_utils.obj /OUT:boltd.lib
+
+all: boltd.lib
 
 clean:
 	del *.lib *.exe *.obj *.asm

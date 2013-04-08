@@ -1,10 +1,10 @@
 #include "CONTEXT_utils.h"
 #include "address.h"
 
-//#include "utils.hpp"
 #include "FPU_stuff_asm.h"
 #include "bitfields.h"
 #include "x86.h"
+#include <assert.h>
 
 void set_or_clear_flag (CONTEXT * ctx, int flag, uint64_t cond)
 {
@@ -291,6 +291,8 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
     //IF_VERBOSE (2, log_stream() << __FUNCTION__ << ": ctx->Dr7 state=0x" << hex << ctx->Dr7 << endl; );
 };
 
+static uint8_t *empty_XMM_register="\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+
 void dump_CONTEXT (fds* s, const CONTEXT * ctx, BOOL dump_DRx, BOOL dump_xmm_regs)
 {
     XSAVE_FORMAT t;
@@ -336,10 +338,10 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, BOOL dump_DRx, BOOL dump_xmm_reg
         strbuf_deinit(&sb_MXCSR);
 
         for (i=0; i<16; i++)
-            if (M128A_is_filled ((BYTE*)&t.XmmRegisters[i]))
+            if (memcmp (((BYTE*)&t.XmmRegisters[i]), empty_XMM_register, 16)!=0) // isn't empty?
             {
                 strbuf sb=STRBUF_INIT;
-                dump_XMM((BYTE*)&t.XmmRegisters[i], &sb);
+                XMM_to_strbuf((BYTE*)&t.XmmRegisters[i], &sb);
                 L_fds (s, "XMM%d = %s\n", sb.buf);
                 strbuf_deinit(&sb);
             };
