@@ -53,12 +53,12 @@ BOOL MC_L_print_buf_in_mem (MemoryCache* mc, address adr, SIZE_T size);
     
 BOOL MC_ReadByte (MemoryCache* mc, address, BYTE*);
 BOOL MC_WriteByte (MemoryCache* mc, address, BYTE);
-BOOL MC_ReadWord (MemoryCache* mc, address, WORD*);
-BOOL MC_WriteWord (MemoryCache* mc, address, WORD);
-BOOL MC_ReadDword (MemoryCache* mc, address, DWORD*);
-BOOL MC_WriteDword (MemoryCache* mc, address, DWORD);
-BOOL MC_ReadDword64 (MemoryCache* mc, address, DWORD64*);
-BOOL MC_WriteDword64 (MemoryCache* mc, address, DWORD64);
+BOOL MC_ReadWyde (MemoryCache* mc, address, WORD*);
+BOOL MC_WriteWyde (MemoryCache* mc, address, WORD);
+BOOL MC_ReadTetrabyte (MemoryCache* mc, address, DWORD*);
+BOOL MC_WriteTetrabyte (MemoryCache* mc, address, DWORD);
+BOOL MC_ReadOctabyte (MemoryCache* mc, address, DWORD64*);
+BOOL MC_WriteOctabyte (MemoryCache* mc, address, DWORD64);
 
 BOOL MC_ReadREG (MemoryCache* mc, address, REG * out);
 BOOL MC_WriteREG (MemoryCache* mc, address, REG);

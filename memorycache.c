@@ -174,7 +174,7 @@ BOOL MC_WriteByte (MemoryCache *mc, address adr, BYTE val)
     return TRUE;
 };
 
-BOOL MC_ReadWord (MemoryCache *mc, address adr, WORD * out)
+BOOL MC_ReadWyde (MemoryCache *mc, address adr, WORD * out)
 {
     BYTE *p;
     int adr_frac;
@@ -201,7 +201,7 @@ BOOL MC_ReadWord (MemoryCache *mc, address adr, WORD * out)
     return TRUE;
 };
 
-BOOL MC_WriteWord (MemoryCache *mc, address adr, WORD val)
+BOOL MC_WriteWyde (MemoryCache *mc, address adr, WORD val)
 {
     address idx;
     BYTE *p;
@@ -231,7 +231,7 @@ BOOL MC_WriteWord (MemoryCache *mc, address adr, WORD val)
     return TRUE;
 };
 
-BOOL MC_ReadDword (MemoryCache *mc, address adr, DWORD * out)
+BOOL MC_ReadTetrabyte (MemoryCache *mc, address adr, DWORD * out)
 {
     //L (2, __FUNCTION__ "(): adr=0x" PRI_ADR_HEX "\n", adr);
  
@@ -271,7 +271,7 @@ BOOL MC_ReadDword (MemoryCache *mc, address adr, DWORD * out)
     return TRUE;
 };
 
-BOOL MC_WriteDword (MemoryCache *mc, address adr, DWORD val)
+BOOL MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
 {
     address idx;
     BYTE *p;
@@ -306,7 +306,7 @@ BOOL MC_WriteDword (MemoryCache *mc, address adr, DWORD val)
     return TRUE;
 };
 
-BOOL MC_ReadDword64 (MemoryCache *mc, address adr, DWORD64 * out)
+BOOL MC_ReadOctabyte (MemoryCache *mc, address adr, DWORD64 * out)
 {
     unsigned adr_frac;
     BYTE *p=MC_find_page_ptr (mc, adr);
@@ -319,9 +319,9 @@ BOOL MC_ReadDword64 (MemoryCache *mc, address adr, DWORD64 * out)
     {
         DWORD d1, d2;
 
-        if (MC_ReadDword(mc, adr+4, &d1)==FALSE)
+        if (MC_ReadTetrabyte(mc, adr+4, &d1)==FALSE)
             return FALSE;
-        if (MC_ReadDword(mc, adr+0, &d2)==FALSE)
+        if (MC_ReadTetrabyte(mc, adr+0, &d2)==FALSE)
             return FALSE;
 
         *out=((uint64_t)d1 << 32) | d2;
@@ -331,7 +331,7 @@ BOOL MC_ReadDword64 (MemoryCache *mc, address adr, DWORD64 * out)
     return TRUE;
 };
 
-BOOL MC_WriteDword64 (MemoryCache *mc, address adr, DWORD64 val)
+BOOL MC_WriteOctabyte (MemoryCache *mc, address adr, DWORD64 val)
 {
     int adr_frac;
     address idx=adr>>LOG2_PAGE_SIZE;
@@ -343,9 +343,9 @@ BOOL MC_WriteDword64 (MemoryCache *mc, address adr, DWORD64 val)
     // а если этот DWORD64 на границе двух страниц...
     if (adr_frac>(PAGE_SIZE-sizeof(DWORD64)))
     {
-        if (MC_WriteDword (mc, adr+0, val&0xFFFFFFFF)==FALSE)
+        if (MC_WriteTetrabyte (mc, adr+0, val&0xFFFFFFFF)==FALSE)
             return FALSE;
-        if (MC_WriteDword (mc, adr+4, (val>>32)&0xFFFFFFFF)==FALSE)
+        if (MC_WriteTetrabyte (mc, adr+4, (val>>32)&0xFFFFFFFF)==FALSE)
             return FALSE;
     }
     else
@@ -362,16 +362,16 @@ BOOL MC_ReadREG (MemoryCache *mc, address a, REG * out)
 #ifdef _WIN64
     return MC_ReadDword64 (mc, a, out);
 #else
-    return MC_ReadDword (mc, a, out);
+    return MC_ReadTetrabyte (mc, a, out);
 #endif
 };
 
 BOOL MC_WriteREG (MemoryCache *mc, address a, REG val)
 {
 #ifdef _WIN64
-    return MC_WriteDword64 (mc, a, val);
+    return MC_WriteOctabyte (mc, a, val);
 #else
-    return MC_WriteDword (mc, a, val);
+    return MC_WriteTetrabyte (mc, a, val);
 #endif
 };
 

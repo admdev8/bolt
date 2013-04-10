@@ -43,7 +43,7 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
         case 16:
             {
                 WORD out;
-                b=MC_ReadWord (mem, *rt_adr, &out);
+                b=MC_ReadWyde (mem, *rt_adr, &out);
                 if (b)
                 {
                     create_Value(V_WORD, (uint16_t)out, result);
@@ -55,7 +55,7 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
         case 32:
             {
                 DWORD out;
-                b=MC_ReadDword (mem, *rt_adr, &out);
+                b=MC_ReadTetrabyte (mem, *rt_adr, &out);
                 if (b)
                 {
                     create_Value(V_DWORD, (uint32_t)out, result);
@@ -67,7 +67,7 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
         case 64:
             {
                 DWORD64 out;
-                b=MC_ReadDword64 (mem, *rt_adr, &out);
+                b=MC_ReadOctabyte (mem, *rt_adr, &out);
                 if (b)
                 {
                     create_Value(V_QWORD, (uint64_t)out, result);
@@ -123,17 +123,17 @@ BOOL Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache 
             }
             else if (op->value_width_in_bits==16)
             {
-                if (MC_WriteWord (mem, adr, get_as_16(val))==FALSE)
+                if (MC_WriteWyde (mem, adr, get_as_16(val))==FALSE)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==32)
             {
-                if (MC_WriteDword (mem, adr, get_as_32(val))==FALSE)
+                if (MC_WriteTetrabyte (mem, adr, get_as_32(val))==FALSE)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==64)
             {
-                if (MC_WriteDword64 (mem, adr, val->u.v)==FALSE)
+                if (MC_WriteOctabyte (mem, adr, val->u.v)==FALSE)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==128)
