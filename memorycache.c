@@ -6,7 +6,7 @@
 
 MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, BOOL dont_read_from_quicksilver_places)
 {
-    MemoryCache* rt=(MemoryCache*)DCALLOC(sizeof (MemoryCache), "MemoryCache");
+    MemoryCache* rt=DCALLOC(MemoryCache, 1, "MemoryCache");
     rt->PHDL=PHDL;
     rt->last_ptr_idx=-1;
     rt->_cache=rbtree_create(TRUE, "MemoryCache._cache", compare_size_t);
@@ -52,7 +52,7 @@ MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
     
     //L (2, __FUNCTION__"(): begin\n");
         
-    rt=(MemoryCache*)DCALLOC(sizeof (MemoryCache), "MemoryCache"); 
+    rt=DCALLOC(MemoryCache, 1, "MemoryCache"); 
     rt->PHDL=mc->PHDL;
     rt->dont_read_from_quicksilver_places=mc->dont_read_from_quicksilver_places;
     rt->last_ptr_idx=-1;
@@ -85,7 +85,7 @@ BOOL MC_LoadPageForAddress (MemoryCache *mc, address adr)
 
     idx=adr>>LOG2_PAGE_SIZE;
     rd_adr=idx<<LOG2_PAGE_SIZE;
-    t=(MemoryCacheElement*)DCALLOC(sizeof(MemoryCacheElement), "MemoryCacheElement");
+    t=DCALLOC(MemoryCacheElement, 1, "MemoryCacheElement");
 
     if (ReadProcessMemory (mc->PHDL, (LPCVOID)rd_adr, t->block, PAGE_SIZE, &bytes_read)==FALSE)
     {
@@ -406,7 +406,7 @@ void MC_dump_state(fds *s, MemoryCache *mc)
 
 BOOL MC_DryRunFlush(MemoryCache *mc)
 {
-    BYTE* tmp=(BYTE*)DMALLOC(PAGE_SIZE, "tmp");
+    BYTE* tmp=DMALLOC(BYTE, PAGE_SIZE, "tmp");
     BOOL rt=TRUE;
     struct rbtree_node_t *i;
     int j;
@@ -512,7 +512,7 @@ BOOL MC_GetString (MemoryCache *mc, address adr, BOOL unicode, strbuf * out)
 
 BOOL MC_L_print_buf_in_mem_ofs (MemoryCache *mc, address adr, REG size, REG ofs)
 {
-	BYTE* buf=(BYTE*)DMALLOC (size, "buf");
+	BYTE* buf=DMALLOC (BYTE, size, "buf");
 
     if (MC_ReadBuffer (mc, adr, size, buf)==FALSE)
         return FALSE;

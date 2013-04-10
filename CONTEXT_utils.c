@@ -286,7 +286,7 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
         break;
     };
 
-    SET_BIT (ctx->Dr7, REG_1<<(bp_i*2));
+    SET_BIT (ctx->Dr7, REG_1<<(bp_i*2)); // FIXME: FLAG_DR7_Lx here, etc...
 
     //IF_VERBOSE (2, log_stream() << __FUNCTION__ << ": ctx->Dr7 state=0x" << hex << ctx->Dr7 << endl; );
 };
@@ -469,6 +469,7 @@ void CONTEXT_set_reg (CONTEXT * ctx, X86_register r, REG v)
     case R_EIP: ctx->Eip=v; break;
 #endif
 
+    // FIXME: FLAG... here!
     case R_PF: v ? SET_BIT (ctx->EFlags, 1<<2) : REMOVE_BIT (ctx->EFlags, 1<<2); break;
     case R_SF: v ? SET_BIT (ctx->EFlags, 1<<7) : REMOVE_BIT (ctx->EFlags, 1<<7); break;
     case R_AF: v ? SET_BIT (ctx->EFlags, 1<<4) : REMOVE_BIT (ctx->EFlags, 1<<4); break;
@@ -654,9 +655,9 @@ void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx)
     strbuf sb=STRBUF_INIT;
     L_fds (s, "DR0=" PRI_REG_HEX " DR1=" PRI_REG_HEX " DR2=" PRI_REG_HEX " DR3=" PRI_REG_HEX "\n", ctx->Dr0, ctx->Dr1, ctx->Dr2, ctx->Dr3);
     
-    L ("DR7=");
+    L_fds (s, "DR7=");
     dump_DR7(s, ctx->Dr7);
-    L ("\n");
+    L_fds (s, "\n");
 };
 
 void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t)
