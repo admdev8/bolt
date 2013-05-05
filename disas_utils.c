@@ -157,7 +157,7 @@ BOOL Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache 
             return FALSE; // make compiler happy
     };
 COPY_FAILED:
-    L (__FUNCTION__"(): Error writing at 0x" PRI_ADR_HEX ". Copy failed.\n", adr);
+    L ("%s(): Error writing at 0x" PRI_ADR_HEX ". Copy failed.\n", __FUNCTION__, adr);
     return FALSE;
 };
 

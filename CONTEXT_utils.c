@@ -1,10 +1,11 @@
+#include <assert.h>
+#include <math.h>
+
 #include "CONTEXT_utils.h"
 #include "address.h"
-
 #include "FPU_stuff_asm.h"
 #include "bitfields.h"
 #include "x86.h"
-#include <assert.h>
 
 void set_or_clear_flag (CONTEXT * ctx, int flag, uint64_t cond)
 {
@@ -291,7 +292,7 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
     //IF_VERBOSE (2, log_stream() << __FUNCTION__ << ": ctx->Dr7 state=0x" << hex << ctx->Dr7 << endl; );
 };
 
-static uint8_t *empty_XMM_register="\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+static uint8_t *empty_XMM_register=(uint8_t *)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
 void dump_CONTEXT (fds* s, const CONTEXT * ctx, BOOL dump_DRx, BOOL dump_xmm_regs)
 {
@@ -652,7 +653,6 @@ address CONTEXT_calc_adr_of_op (CONTEXT * ctx, Da_op *op)
 
 void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx)
 {
-    strbuf sb=STRBUF_INIT;
     L_fds (s, "DR0=" PRI_REG_HEX " DR1=" PRI_REG_HEX " DR2=" PRI_REG_HEX " DR3=" PRI_REG_HEX "\n", ctx->Dr0, ctx->Dr1, ctx->Dr2, ctx->Dr3);
     
     L_fds (s, "DR7=");

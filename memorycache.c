@@ -25,7 +25,7 @@ void MC_MemoryCache_dtor(MemoryCache *mc, BOOL check_unflushed_elements)
             MemoryCacheElement *v=(MemoryCacheElement*)i->value;
             if (v->to_be_flushed)
             {
-                printf (__FUNCTION__"(): there are still elements to be flushed!\n");
+                printf ("%s(): there are still elements to be flushed!\n", __FUNCTION__);
                 assert(0);
             };
         };
@@ -386,7 +386,7 @@ void MC_Flush(MemoryCache *mc)
         {
             address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
             if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==FALSE)
-                die (__FUNCTION__ "(): can't flush memory cache. fatal error. exiting\n");
+                die ("%s(): can't flush memory cache. fatal error. exiting\n", __FUNCTION__);
             v->to_be_flushed=FALSE;
         };
     };
@@ -395,7 +395,7 @@ void MC_Flush(MemoryCache *mc)
 void MC_dump_state(fds *s, MemoryCache *mc)
 {
     rbtree_node *i;
-    L_fds (s, __FUNCTION__ "()\n");
+    L_fds (s, "%s()\n", __FUNCTION__);
     
     for (i=rbtree_minimum(mc->_cache); i!=NULL; i=rbtree_succ(i))
     {
@@ -420,7 +420,7 @@ BOOL MC_DryRunFlush(MemoryCache *mc)
             SIZE_T bytes_read;
 
             if (ReadProcessMemory (mc->PHDL, (LPCVOID)adr, tmp, PAGE_SIZE, &bytes_read)==FALSE)
-                die (__FUNCTION__"(): can't read memory. fatal error. exiting\n");
+                die ("%s(): can't read memory. fatal error. exiting\n", __FUNCTION__);
 
             assert (bytes_read==PAGE_SIZE);
 
@@ -431,8 +431,8 @@ BOOL MC_DryRunFlush(MemoryCache *mc)
                 {
                     if (v->block[j]!=tmp[j])
                     {
-                        L (__FUNCTION__" () bytes are different at adr 0x" PRI_ADR_HEX ": in cache: 0x%02X, in memory: 0x%02X\n",
-                                adr+j, v->block[j], tmp[j]);
+                        L ("%s() bytes are different at adr 0x" PRI_ADR_HEX ": in cache: 0x%02X, in memory: 0x%02X\n",
+                                __FUNCTION__, adr+j, v->block[j], tmp[j]);
                     };
                 };
             };
@@ -466,7 +466,7 @@ static BOOL my_isprint (char a)
 BOOL MC_GetString (MemoryCache *mc, address adr, BOOL unicode, strbuf * out)
 {
     int step, i;
-    char by, _out;
+    byte by, _out;
     int chars_read=0;
 
     if (unicode)

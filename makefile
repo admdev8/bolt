@@ -1,26 +1,22 @@
-OCTOTHORPE=C:\Users\Administrator\Projects\octothorpe
-OCTOTHORPE_LIB=$(OCTOTHORPE)\octothorped.lib
-DISASM=C:\Users\Administrator\Projects\x86_disasm
-DISASM_LIB=$(DISASM)\x86_disasmd.lib
+OCTOTHORPE=../octothorpe/
+OCTOTHORPE_LIBRARY=$(OCTOTHORPE)octothorped.a
+X86_DISASM=../x86_disasm/
+X86_DISASM_LIBRARY=$(X86_DISASM)x86_disasmd.a
+CPPFLAGS=-D_DEBUG -I$(OCTOTHORPE) -I$(X86_DISASM)
+CFLAGS=-c -Wall -g
+SOURCES=CONTEXT_utils.c disas_utils.c memorycache.c X86_register_helpers.c
+OBJECTS=$(SOURCES:.c=.o)
+DEPFILES=$(SOURCES:.c=.d)
+LIBRARY=boltd.a
 
-CL_OPTIONS=/c /D_DEBUG /Zi /I$(OCTOTHORPE) /I$(DISASM)
-
-X86_register_helpers.obj: X86_register_helpers.c X86_register_helpers.h
-	cl.exe X86_register_helpers.c $(CL_OPTIONS)
-
-memorycache.obj: memorycache.c memorycache.h
-	cl.exe memorycache.c $(CL_OPTIONS)
-
-CONTEXT_utils.obj: CONTEXT_utils.c CONTEXT_utils.h
-	cl.exe CONTEXT_utils.c $(CL_OPTIONS)
-
-disas_utils.obj: disas_utils.c disas_utils.h
-	cl.exe disas_utils.c $(CL_OPTIONS)
-
-boltd.lib: X86_register_helpers.obj memorycache.obj CONTEXT_utils.obj disas_utils.obj
-	lib.exe X86_register_helpers.obj memorycache.obj CONTEXT_utils.obj disas_utils.obj /OUT:boltd.lib
-
-all: boltd.lib
+all: $(LIBRARY)($(OBJECTS))
 
 clean:
-	del *.lib *.exe *.obj *.asm
+	$(RM) $(OBJECTS)
+	$(RM) $(DEPFILES)
+	$(RM) $(LIBRARY)
+
+-include $(OBJECTS:.o=.d)
+
+%.d: %.c
+	$(CC) -MM $(CFLAGS) $(CPPFLAGS) $< > $@

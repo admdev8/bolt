@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "logging.h"
 #include "x86_disas.h"
+#include "mingw_addons.h"
 
 #ifdef  __cplusplus
 extern "C" {

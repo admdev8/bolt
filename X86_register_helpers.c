@@ -2,6 +2,7 @@
 
 #include <assert.h>
 
+#include "mingw_addons.h"
 #include "X86_register.h"
 
 void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
@@ -259,19 +260,19 @@ void X86_register_set_value (X86_register r, CONTEXT *ctx, s_Value *val)
     case R_ESP: assert (val->t==V_DWORD); ctx->Esp=val->u.v&0xFFFFFFFF; break;
     case R_EIP: assert (val->t==V_DWORD); ctx->Eip=val->u.v&0xFFFFFFFF; break;
 
-    case R_AX: assert (val->t==V_WORD); ctx->Eax=(ctx->Eax&0xFFFF0000) | val->u.v&0xFFFF; break;
-    case R_BX: assert (val->t==V_WORD); ctx->Ebx=(ctx->Ebx&0xFFFF0000) | val->u.v&0xFFFF; break;
-    case R_CX: assert (val->t==V_WORD); ctx->Ecx=(ctx->Ecx&0xFFFF0000) | val->u.v&0xFFFF; break;
-    case R_DX: assert (val->t==V_WORD); ctx->Edx=(ctx->Edx&0xFFFF0000) | val->u.v&0xFFFF; break;
-    case R_SI: assert (val->t==V_WORD); ctx->Esi=(ctx->Esi&0xFFFF0000) | val->u.v&0xFFFF; break;
-    case R_DI: assert (val->t==V_WORD); ctx->Edi=(ctx->Edi&0xFFFF0000) | val->u.v&0xFFFF; break;
-    case R_BP: assert (val->t==V_WORD); ctx->Ebp=(ctx->Ebp&0xFFFF0000) | val->u.v&0xFFFF; break;
-    case R_SP: assert (val->t==V_WORD); ctx->Esp=(ctx->Esp&0xFFFF0000) | val->u.v&0xFFFF; break;
+    case R_AX: assert (val->t==V_WORD); ctx->Eax=(ctx->Eax&0xFFFF0000) | (val->u.v&0xFFFF); break;
+    case R_BX: assert (val->t==V_WORD); ctx->Ebx=(ctx->Ebx&0xFFFF0000) | (val->u.v&0xFFFF); break;
+    case R_CX: assert (val->t==V_WORD); ctx->Ecx=(ctx->Ecx&0xFFFF0000) | (val->u.v&0xFFFF); break;
+    case R_DX: assert (val->t==V_WORD); ctx->Edx=(ctx->Edx&0xFFFF0000) | (val->u.v&0xFFFF); break;
+    case R_SI: assert (val->t==V_WORD); ctx->Esi=(ctx->Esi&0xFFFF0000) | (val->u.v&0xFFFF); break;
+    case R_DI: assert (val->t==V_WORD); ctx->Edi=(ctx->Edi&0xFFFF0000) | (val->u.v&0xFFFF); break;
+    case R_BP: assert (val->t==V_WORD); ctx->Ebp=(ctx->Ebp&0xFFFF0000) | (val->u.v&0xFFFF); break;
+    case R_SP: assert (val->t==V_WORD); ctx->Esp=(ctx->Esp&0xFFFF0000) | (val->u.v&0xFFFF); break;
 
-    case R_AL: assert (val->t==V_BYTE); ctx->Eax=(ctx->Eax&0xFFFFFF00) | val->u.v&0xFF; break;
-    case R_BL: assert (val->t==V_BYTE); ctx->Ebx=(ctx->Ebx&0xFFFFFF00) | val->u.v&0xFF; break;
-    case R_CL: assert (val->t==V_BYTE); ctx->Ecx=(ctx->Ecx&0xFFFFFF00) | val->u.v&0xFF; break;
-    case R_DL: assert (val->t==V_BYTE); ctx->Edx=(ctx->Edx&0xFFFFFF00) | val->u.v&0xFF; break;
+    case R_AL: assert (val->t==V_BYTE); ctx->Eax=(ctx->Eax&0xFFFFFF00) | (val->u.v&0xFF); break;
+    case R_BL: assert (val->t==V_BYTE); ctx->Ebx=(ctx->Ebx&0xFFFFFF00) | (val->u.v&0xFF); break;
+    case R_CL: assert (val->t==V_BYTE); ctx->Ecx=(ctx->Ecx&0xFFFFFF00) | (val->u.v&0xFF); break;
+    case R_DL: assert (val->t==V_BYTE); ctx->Edx=(ctx->Edx&0xFFFFFF00) | (val->u.v&0xFF); break;
 
     case R_AH: assert (val->t==V_BYTE); ctx->Eax=(ctx->Eax&0xFFFF00FF) | ((val->u.v&0xFF)<<8); break;
     case R_BH: assert (val->t==V_BYTE); ctx->Ebx=(ctx->Ebx&0xFFFF00FF) | ((val->u.v&0xFF)<<8); break;
@@ -279,7 +280,7 @@ void X86_register_set_value (X86_register r, CONTEXT *ctx, s_Value *val)
     case R_DH: assert (val->t==V_BYTE); ctx->Edx=(ctx->Edx&0xFFFF00FF) | ((val->u.v&0xFF)<<8); break;
 #endif
     default:
-        L ("%s. r=%s\n", __FUNCTION__, X86_register_ToString (r));
+        printf ("%s. r=%s\n", __FUNCTION__, X86_register_ToString (r));
         assert (0); break;
     };
 };
