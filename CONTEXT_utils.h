@@ -1,7 +1,7 @@
 #pragma once
 
 #include "X86_register.h"
-#include "reg.h"
+#include "datatypes.h"
 #include <windows.h>
 #include "address.h"
 #include "strbuf.h"

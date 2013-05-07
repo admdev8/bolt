@@ -5,7 +5,7 @@
 #include "value.h"
 #include "CONTEXT_utils.h"
 #include "memorycache.h"
-#include "reg.h"
+#include "datatypes.h"
 #include "x86_disas.h"
 
 #ifdef  __cplusplus

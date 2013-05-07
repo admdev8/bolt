@@ -2,7 +2,7 @@
 
 #include <windows.h>
 #include "address.h"
-#include "reg.h"
+#include "datatypes.h"
 #include "rbtree.h"
 #include "strbuf.h"
 #include "logging.h"
