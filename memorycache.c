@@ -4,17 +4,17 @@
 #include "stuff.h"
 #include <assert.h>
 
-MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, BOOL dont_read_from_quicksilver_places)
+MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places)
 {
     MemoryCache* rt=DCALLOC(MemoryCache, 1, "MemoryCache");
     rt->PHDL=PHDL;
     rt->last_ptr_idx=-1;
-    rt->_cache=rbtree_create(TRUE, "MemoryCache._cache", compare_size_t);
+    rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
     rt->dont_read_from_quicksilver_places=dont_read_from_quicksilver_places;
     return rt;
 };
 
-void MC_MemoryCache_dtor(MemoryCache *mc, BOOL check_unflushed_elements)
+void MC_MemoryCache_dtor(MemoryCache *mc, bool check_unflushed_elements)
 {
     struct rbtree_node_t *i;
 
@@ -56,13 +56,13 @@ MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
     rt->PHDL=mc->PHDL;
     rt->dont_read_from_quicksilver_places=mc->dont_read_from_quicksilver_places;
     rt->last_ptr_idx=-1;
-    rt->_cache=rbtree_create(TRUE, "MemoryCache._cache", compare_size_t);
+    rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
     rbtree_copy (mc->_cache, rt->_cache, key_copier, value_copier);
     
     return rt;
 };
 
-BOOL MC_LoadPageForAddress (MemoryCache *mc, address adr)
+bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 {
     address idx, rd_adr;
     SIZE_T bytes_read;
@@ -79,7 +79,7 @@ BOOL MC_LoadPageForAddress (MemoryCache *mc, address adr)
         // с другой стороны, эмулятор CPU вполне может нормально работать, хоть и с небольшими 
         // отклонениями по системному времени
         //L (2, __FUNCTION__ "(0x" PRI_ADR_HEX "): wouldn't read process memory\n");
-        return FALSE;
+        return false;
     };
 #endif
 
@@ -87,36 +87,36 @@ BOOL MC_LoadPageForAddress (MemoryCache *mc, address adr)
     rd_adr=idx<<LOG2_PAGE_SIZE;
     t=DCALLOC(MemoryCacheElement, 1, "MemoryCacheElement");
 
-    if (ReadProcessMemory (mc->PHDL, (LPCVOID)rd_adr, t->block, PAGE_SIZE, &bytes_read)==FALSE)
+    if (ReadProcessMemory (mc->PHDL, (LPCVOID)rd_adr, t->block, PAGE_SIZE, &bytes_read)==false)
     {
         DFREE (t);
         //L (2, __FUNCTION__ "(0x" PRI_ADR_HEX "): can't read process memory at 0x" PRI_ADR_HEX "\n", adr, rd_adr);
-        return FALSE;
+        return false;
     };
     
     assert (bytes_read==PAGE_SIZE);
     rbtree_insert(mc->_cache, (void*)idx, t);
-    return TRUE;
+    return true;
 };
 
-BOOL MC_ReadBuffer (MemoryCache *mc, address adr, SIZE_T size, BYTE* outbuf)
+bool MC_ReadBuffer (MemoryCache *mc, address adr, SIZE_T size, BYTE* outbuf)
 {
     SIZE_T i;
     // FIXME: это временное решение. и тормозное, конечно
     for (i=0; i<size; i++)
-        if (MC_ReadByte (mc, adr+i, &outbuf[i])==FALSE)
-            return FALSE;
-    return TRUE;
+        if (MC_ReadByte (mc, adr+i, &outbuf[i])==false)
+            return false;
+    return true;
 };
 
-BOOL MC_WriteBuffer (MemoryCache *mc, address adr, SIZE_T size, BYTE* inbuf)
+bool MC_WriteBuffer (MemoryCache *mc, address adr, SIZE_T size, BYTE* inbuf)
 {
     SIZE_T i;
     // FIXME: это временное решение. и тормозное, конечно
     for (i=0; i<size; i++)
-        if (MC_WriteByte (mc, adr+i, inbuf[i])==FALSE)
-            return FALSE;
-    return TRUE;
+        if (MC_WriteByte (mc, adr+i, inbuf[i])==false)
+            return false;
+    return true;
 };
 
 BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
@@ -130,7 +130,7 @@ BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
         MemoryCacheElement *tmp=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
         if (tmp==NULL)
         {
-            if (MC_LoadPageForAddress (mc, adr)==FALSE) // подгружаем блок если у нас его нету
+            if (MC_LoadPageForAddress (mc, adr)==false) // подгружаем блок если у нас его нету
                 return NULL;
             tmp=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
             assert (tmp!=NULL);
@@ -143,45 +143,45 @@ BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
     };
 };
 
-BOOL MC_ReadByte (MemoryCache *mc, address adr, BYTE * out)
+bool MC_ReadByte (MemoryCache *mc, address adr, BYTE * out)
 {
     BYTE* p=MC_find_page_ptr (mc, adr);
     if (p==NULL)
-        return FALSE;
+        return false;
     *out=p[adr&(PAGE_SIZE-1)];
-    return TRUE;
+    return true;
 };
 
 void MC_mark_as_to_be_flushed(MemoryCache *mc, address idx)
 {
     MemoryCacheElement *m=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
     assert (m!=NULL);
-    m->to_be_flushed=TRUE;
+    m->to_be_flushed=true;
 };
 
-BOOL MC_WriteByte (MemoryCache *mc, address adr, BYTE val)
+bool MC_WriteByte (MemoryCache *mc, address adr, BYTE val)
 {
     address idx;
     BYTE *p;
     
     p=MC_find_page_ptr (mc, adr);
     if (p==NULL)
-        return FALSE;
+        return false;
     idx=adr>>LOG2_PAGE_SIZE;
 
     p[adr&(PAGE_SIZE-1)]=val;
     MC_mark_as_to_be_flushed(mc, idx);
-    return TRUE;
+    return true;
 };
 
-BOOL MC_ReadWyde (MemoryCache *mc, address adr, WORD * out)
+bool MC_ReadWyde (MemoryCache *mc, address adr, WORD * out)
 {
     BYTE *p;
     int adr_frac;
     
     p=MC_find_page_ptr (mc, adr);
     if (p==NULL)
-        return FALSE;
+        return false;
 
     adr_frac=adr&(PAGE_SIZE-1);
     // if this WORD is right on joint of two pages...
@@ -189,19 +189,19 @@ BOOL MC_ReadWyde (MemoryCache *mc, address adr, WORD * out)
     {
         BYTE b1, b2;
 
-        if (MC_ReadByte(mc, adr+1, &b1)==FALSE)
-            return FALSE;
-        if (MC_ReadByte(mc, adr, &b2)==FALSE)
-            return FALSE;
+        if (MC_ReadByte(mc, adr+1, &b1)==false)
+            return false;
+        if (MC_ReadByte(mc, adr, &b2)==false)
+            return false;
 
         *out=(b1 << 8) | b2;
     }
     else
         *out=*(WORD*)(p+adr_frac);
-    return TRUE;
+    return true;
 };
 
-BOOL MC_WriteWyde (MemoryCache *mc, address adr, WORD val)
+bool MC_WriteWyde (MemoryCache *mc, address adr, WORD val)
 {
     address idx;
     BYTE *p;
@@ -211,16 +211,16 @@ BOOL MC_WriteWyde (MemoryCache *mc, address adr, WORD val)
     idx=adr>>LOG2_PAGE_SIZE;
 
     if (p==NULL)
-        return FALSE;
+        return false;
 
     adr_frac=adr&(PAGE_SIZE-1);
     // а если этот WORD на границе двух страниц...
     if (adr_frac>(PAGE_SIZE-sizeof(WORD)))
     {
-        if (MC_WriteByte (mc, adr+0, val&0xFF)==FALSE)
-            return FALSE;
-        if (MC_WriteByte (mc, adr+1, val>>8)==FALSE)
-            return FALSE;
+        if (MC_WriteByte (mc, adr+0, val&0xFF)==false)
+            return false;
+        if (MC_WriteByte (mc, adr+1, val>>8)==false)
+            return false;
     }
     else
     {
@@ -228,10 +228,10 @@ BOOL MC_WriteWyde (MemoryCache *mc, address adr, WORD val)
         MC_mark_as_to_be_flushed(mc, idx);
     };
  
-    return TRUE;
+    return true;
 };
 
-BOOL MC_ReadTetrabyte (MemoryCache *mc, address adr, DWORD * out)
+bool MC_ReadTetrabyte (MemoryCache *mc, address adr, DWORD * out)
 {
     //L (2, __FUNCTION__ "(): adr=0x" PRI_ADR_HEX "\n", adr);
  
@@ -240,38 +240,38 @@ BOOL MC_ReadTetrabyte (MemoryCache *mc, address adr, DWORD * out)
     
     p=MC_find_page_ptr (mc, adr);
     if (p==NULL)
-        return FALSE;
+        return false;
 
     adr_frac=adr&(PAGE_SIZE-1);
     // а если этот DWORD на границе двух страниц...
     if (adr_frac>(PAGE_SIZE-sizeof(DWORD)))
     {
         BYTE b1, b2, b3, b4;
-        BOOL read_OK=TRUE;
+        bool read_OK=true;
         
-        if (MC_ReadByte(mc, adr+3, &b1)==FALSE)
-            read_OK=FALSE;
-        if (MC_ReadByte(mc, adr+2, &b2)==FALSE)
-            read_OK=FALSE;
-        if (MC_ReadByte(mc, adr+1, &b3)==FALSE)
-            read_OK=FALSE;
-        if (MC_ReadByte(mc, adr+0, &b4)==FALSE)
-            read_OK=FALSE;
+        if (MC_ReadByte(mc, adr+3, &b1)==false)
+            read_OK=false;
+        if (MC_ReadByte(mc, adr+2, &b2)==false)
+            read_OK=false;
+        if (MC_ReadByte(mc, adr+1, &b3)==false)
+            read_OK=false;
+        if (MC_ReadByte(mc, adr+0, &b4)==false)
+            read_OK=false;
         
-        if (read_OK==FALSE)
+        if (read_OK==false)
         {
             //L (2, __FUNCTION__ "(0x" PRI_ADR_HEX "): one of ReadByte() funcs failed\n", adr);
-            return FALSE;
+            return false;
         };
 
         *out=(b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
     }
     else
         *out=*(DWORD*)(p+adr_frac);
-    return TRUE;
+    return true;
 };
 
-BOOL MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
+bool MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
 {
     address idx;
     BYTE *p;
@@ -280,7 +280,7 @@ BOOL MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
     p=MC_find_page_ptr (mc, adr);
 
     if (p==NULL)
-        return FALSE;
+        return false;
     
     idx=adr>>LOG2_PAGE_SIZE;
 
@@ -288,14 +288,14 @@ BOOL MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
     // а если этот DWORD на границе двух страниц...
     if (adr_frac>(PAGE_SIZE-sizeof(DWORD)))
     {
-        if (MC_WriteByte (mc, adr+0, val&0xFF)==FALSE)
-            return FALSE;
-        if (MC_WriteByte (mc, adr+1, (val>>8)&0xFF)==FALSE)
-            return FALSE;
-        if (MC_WriteByte (mc, adr+2, (val>>16)&0xFF)==FALSE)
-            return FALSE;
-        if (MC_WriteByte (mc, adr+3, (val>>24)&0xFF)==FALSE)
-            return FALSE;
+        if (MC_WriteByte (mc, adr+0, val&0xFF)==false)
+            return false;
+        if (MC_WriteByte (mc, adr+1, (val>>8)&0xFF)==false)
+            return false;
+        if (MC_WriteByte (mc, adr+2, (val>>16)&0xFF)==false)
+            return false;
+        if (MC_WriteByte (mc, adr+3, (val>>24)&0xFF)==false)
+            return false;
     }
     else
     {
@@ -303,15 +303,15 @@ BOOL MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
         MC_mark_as_to_be_flushed(mc, idx);
     };
 
-    return TRUE;
+    return true;
 };
 
-BOOL MC_ReadOctabyte (MemoryCache *mc, address adr, DWORD64 * out)
+bool MC_ReadOctabyte (MemoryCache *mc, address adr, DWORD64 * out)
 {
     unsigned adr_frac;
     BYTE *p=MC_find_page_ptr (mc, adr);
     if (p==NULL)
-        return FALSE;
+        return false;
 
     adr_frac=adr&(PAGE_SIZE-1);
     // а если этот DWORD64 на границе двух страниц...
@@ -319,34 +319,34 @@ BOOL MC_ReadOctabyte (MemoryCache *mc, address adr, DWORD64 * out)
     {
         DWORD d1, d2;
 
-        if (MC_ReadTetrabyte(mc, adr+4, &d1)==FALSE)
-            return FALSE;
-        if (MC_ReadTetrabyte(mc, adr+0, &d2)==FALSE)
-            return FALSE;
+        if (MC_ReadTetrabyte(mc, adr+4, &d1)==false)
+            return false;
+        if (MC_ReadTetrabyte(mc, adr+0, &d2)==false)
+            return false;
 
         *out=((uint64_t)d1 << 32) | d2;
     }
     else
         *out=*(DWORD64*)(p+adr_frac);
-    return TRUE;
+    return true;
 };
 
-BOOL MC_WriteOctabyte (MemoryCache *mc, address adr, DWORD64 val)
+bool MC_WriteOctabyte (MemoryCache *mc, address adr, DWORD64 val)
 {
     int adr_frac;
     address idx=adr>>LOG2_PAGE_SIZE;
     BYTE *p=MC_find_page_ptr (mc, adr);
     if (p==NULL)
-        return FALSE;
+        return false;
 
     adr_frac=adr&(PAGE_SIZE-1);
     // а если этот DWORD64 на границе двух страниц...
     if (adr_frac>(PAGE_SIZE-sizeof(DWORD64)))
     {
-        if (MC_WriteTetrabyte (mc, adr+0, val&0xFFFFFFFF)==FALSE)
-            return FALSE;
-        if (MC_WriteTetrabyte (mc, adr+4, (val>>32)&0xFFFFFFFF)==FALSE)
-            return FALSE;
+        if (MC_WriteTetrabyte (mc, adr+0, val&0xFFFFFFFF)==false)
+            return false;
+        if (MC_WriteTetrabyte (mc, adr+4, (val>>32)&0xFFFFFFFF)==false)
+            return false;
     }
     else
     {
@@ -354,19 +354,19 @@ BOOL MC_WriteOctabyte (MemoryCache *mc, address adr, DWORD64 val)
         MC_mark_as_to_be_flushed(mc, idx);
     };
 
-    return TRUE;
+    return true;
 };
 
-BOOL MC_ReadREG (MemoryCache *mc, address a, REG * out)
+bool MC_ReadREG (MemoryCache *mc, address a, REG * out)
 {
 #ifdef _WIN64
-    return MC_ReadDword64 (mc, a, out);
+    return MC_ReadOctabyte (mc, a, out);
 #else
     return MC_ReadTetrabyte (mc, a, out);
 #endif
 };
 
-BOOL MC_WriteREG (MemoryCache *mc, address a, REG val)
+bool MC_WriteREG (MemoryCache *mc, address a, REG val)
 {
 #ifdef _WIN64
     return MC_WriteOctabyte (mc, a, val);
@@ -385,9 +385,9 @@ void MC_Flush(MemoryCache *mc)
         if (v->to_be_flushed)
         {
             address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
-            if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==FALSE)
+            if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==false)
                 die ("%s(): can't flush memory cache. fatal error. exiting\n", __FUNCTION__);
-            v->to_be_flushed=FALSE;
+            v->to_be_flushed=false;
         };
     };
 };
@@ -404,10 +404,10 @@ void MC_dump_state(fds *s, MemoryCache *mc)
     };
 };
 
-BOOL MC_DryRunFlush(MemoryCache *mc)
+bool MC_DryRunFlush(MemoryCache *mc)
 {
     BYTE* tmp=DMALLOC(BYTE, PAGE_SIZE, "tmp");
-    BOOL rt=TRUE;
+    bool rt=true;
     struct rbtree_node_t *i;
     int j;
 
@@ -419,14 +419,14 @@ BOOL MC_DryRunFlush(MemoryCache *mc)
             address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
             SIZE_T bytes_read;
 
-            if (ReadProcessMemory (mc->PHDL, (LPCVOID)adr, tmp, PAGE_SIZE, &bytes_read)==FALSE)
+            if (ReadProcessMemory (mc->PHDL, (LPCVOID)adr, tmp, PAGE_SIZE, &bytes_read)==false)
                 die ("%s(): can't read memory. fatal error. exiting\n", __FUNCTION__);
 
             assert (bytes_read==PAGE_SIZE);
 
             if (memcmp (v->block, tmp, PAGE_SIZE)!=0)
             {
-                rt=FALSE;
+                rt=false;
                 for (j=0; j<PAGE_SIZE; j++)
                 {
                     if (v->block[j]!=tmp[j])
@@ -444,26 +444,26 @@ BOOL MC_DryRunFlush(MemoryCache *mc)
 };
 
 // FIXME: invent a good name for it!
-static BOOL my_isprint (char a)
+static bool my_isprint (char a)
 {
   if (a==0x0A)
-    return TRUE;
+    return true;
 
   if (a==0x0D)
-    return TRUE;
+    return true;
 
   if (a<0x20)
-    return FALSE;
+    return false;
     
   if (a>=0x7F)
-    return FALSE;
+    return false;
 
-  return TRUE;
+  return true;
 };
 
 // FIXME: slow
-// can output something to out, but eventually return FALSE
-BOOL MC_GetString (MemoryCache *mc, address adr, BOOL unicode, strbuf * out)
+// can output something to out, but eventually return false
+bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out)
 {
     int step, i;
     byte by, _out;
@@ -475,55 +475,55 @@ BOOL MC_GetString (MemoryCache *mc, address adr, BOOL unicode, strbuf * out)
         step=1;
 
     // per-byte reading
-    if (MC_ReadByte (mc, adr, &_out)==FALSE)
-        return FALSE; // memory read error
+    if (MC_ReadByte (mc, adr, &_out)==false)
+        return false; // memory read error
 
     if (_out==0)
-        return FALSE; // read OK, but no string
+        return false; // read OK, but no string
 
     for (i=0; ; i=i+step)
     {
-        if (MC_ReadByte (mc, adr+i, &by)==FALSE)
-            return FALSE; // memory read error
+        if (MC_ReadByte (mc, adr+i, &by)==false)
+            return false; // memory read error
 
-        strbuf_addc_C_escaped (out, by, FALSE);
+        strbuf_addc_C_escaped (out, by, false);
         chars_read++;
         if (by==0)
             break;
 
-        if (my_isprint (by)==FALSE)
+        if (my_isprint (by)==false)
         {
             //L (2, __FUNCTION__"() (per-byte read) not a printable string (adr=0x" PRI_ADR_HEX " i=%d, b=0x%x), returning empty string\n", adr, i, b);
-            return FALSE;
+            return false;
         };
     };
 
     if (chars_read>3)
     {
         //L (2, __FUNCTION__"() (per-byte read) out=[%s]\n", out.c_str());
-        return TRUE;
+        return true;
     }
     else
     {
         //L (2, __FUNCTION__"() (per-byte read) too short string rt=[%s], suppress it\n", rt.c_str());
-        return FALSE;
+        return false;
     };
 };
 
-BOOL MC_L_print_buf_in_mem_ofs (MemoryCache *mc, address adr, REG size, REG ofs)
+bool MC_L_print_buf_in_mem_ofs (MemoryCache *mc, address adr, REG size, REG ofs)
 {
 	BYTE* buf=DMALLOC (BYTE, size, "buf");
 
-    if (MC_ReadBuffer (mc, adr, size, buf)==FALSE)
-        return FALSE;
+    if (MC_ReadBuffer (mc, adr, size, buf)==false)
+        return false;
 
 	L_print_buf_ofs (buf, size, ofs); // print starting from zero
 
 	DFREE(buf);
-    return TRUE;
+    return true;
 };
 
-BOOL MC_L_print_buf_in_mem (MemoryCache *mc, address adr, SIZE_T size)
+bool MC_L_print_buf_in_mem (MemoryCache *mc, address adr, SIZE_T size)
 {
 	return MC_L_print_buf_in_mem_ofs (mc, adr, size, 0);
 };

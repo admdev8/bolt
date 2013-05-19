@@ -3,23 +3,23 @@
 #include <assert.h>
 #include "X86_register_helpers.h"
 
-BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, MemoryCache *mem, 
+bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, MemoryCache *mem, 
         const char *fname, unsigned fileline, s_Value *result)
 {
-    BOOL b;
+    bool b;
 
     if (op->type==DA_OP_TYPE_REGISTER)
     {
         assert (op->u.reg != R_ABSENT);
         // вытянуть из ctx
         X86_register_get_value (op->u.reg, ctx, result);
-        return TRUE;
+        return true;
     };
 
     if (op->type==DA_OP_TYPE_VALUE)
     {
         copy_Value (result, &op->u.val.v);
-        return TRUE;
+        return true;
     };
 
     if (op->type==DA_OP_TYPE_VALUE_IN_MEMORY)
@@ -35,10 +35,10 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 if (b)
                 {
                     create_Value(V_BYTE, (uint8_t)out, result);
-                    return TRUE;
+                    return true;
                 }
                 else
-                    return FALSE;
+                    return false;
             };
         case 16:
             {
@@ -47,10 +47,10 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 if (b)
                 {
                     create_Value(V_WORD, (uint16_t)out, result);
-                    return TRUE;
+                    return true;
                 }
                 else
-                    return FALSE;
+                    return false;
             };
         case 32:
             {
@@ -59,10 +59,10 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 if (b)
                 {
                     create_Value(V_DWORD, (uint32_t)out, result);
-                    return TRUE;
+                    return true;
                 }
                 else
-                    return FALSE;
+                    return false;
             };
         case 64:
             {
@@ -71,22 +71,22 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 if (b)
                 {
                     create_Value(V_QWORD, (uint64_t)out, result);
-                    return TRUE;
+                    return true;
                 }
                 else
-                    return FALSE;
+                    return false;
             };
         case 128:
             {
                 M128A xmm;
-                if (MC_ReadBuffer (mem, *rt_adr, sizeof (M128A), (BYTE*)&xmm)==FALSE)
-                    return FALSE;
+                if (MC_ReadBuffer (mem, *rt_adr, sizeof (M128A), (BYTE*)&xmm)==false)
+                    return false;
                 //L ("%s(). rt_adr=0x%x\n", __FUNCTION__, rt_adr);
                 //L_print_buf ((BYTE*)&xmm, 16);
                 create_XMM_Value ((uint8_t*)&xmm, result);
                 //printf ("%s(): val after constructing:\n", __FUNCTION__);
                 //val.dump();
-                return TRUE;
+                return true;
             };
         default:
             assert(!"unknown value_width_in_bits");
@@ -100,10 +100,10 @@ BOOL Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
 	L ("%s(): type=%d!\n", __FUNCTION__, type);
 #endif
 	assert(0); // should not be here
-	return FALSE;
+	return false;
 };
 
-BOOL Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache *mem) 
+bool Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache *mem) 
 {
     address adr;
 
@@ -111,29 +111,29 @@ BOOL Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache 
     {
         case DA_OP_TYPE_REGISTER:
             X86_register_set_value (op->u.reg, ctx, val);
-            return TRUE;
+            return true;
 
         case DA_OP_TYPE_VALUE_IN_MEMORY:
             adr=(address)Da_op_calc_adr_of_op(op, ctx, mem);
 
             if (op->value_width_in_bits==8)
             {
-                if (MC_WriteByte (mem, adr, get_as_8(val))==FALSE)
+                if (MC_WriteByte (mem, adr, get_as_8(val))==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==16)
             {
-                if (MC_WriteWyde (mem, adr, get_as_16(val))==FALSE)
+                if (MC_WriteWyde (mem, adr, get_as_16(val))==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==32)
             {
-                if (MC_WriteTetrabyte (mem, adr, get_as_32(val))==FALSE)
+                if (MC_WriteTetrabyte (mem, adr, get_as_32(val))==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==64)
             {
-                if (MC_WriteOctabyte (mem, adr, val->u.v)==FALSE)
+                if (MC_WriteOctabyte (mem, adr, val->u.v)==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==128)
@@ -142,23 +142,23 @@ BOOL Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache 
                 BYTE * xmm=get_xmm(val);
                 //L ("%s(). writing to adr=0x%x\n", __FUNCTION__, adr);
                 //L_print_buf (xmm, 16);
-                if (MC_WriteBuffer (mem, adr, 16, xmm)==FALSE)
+                if (MC_WriteBuffer (mem, adr, 16, xmm)==false)
                     goto COPY_FAILED;
             }
             else
             {
                 assert(0);
             };
-            return TRUE;
+            return true;
             break;
 
         default:
             assert(0);
-            return FALSE; // make compiler happy
+            return false; // make compiler happy
     };
 COPY_FAILED:
     L ("%s(): Error writing at 0x" PRI_ADR_HEX ". Copy failed.\n", __FUNCTION__, adr);
-    return FALSE;
+    return false;
 };
 
 address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem)

@@ -43,9 +43,9 @@ void CONTEXT_add_to_PC (CONTEXT * ctx, REG i);
 
 void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a);
 
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, BOOL dump_DRx, BOOL dump_xmm_regs);
+void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_DRx, bool dump_xmm_regs);
 
-BOOL CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2);
+bool CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2);
 
 void CONTEXT_set_reg (CONTEXT * ctx, X86_register r, REG v);
 void CONTEXT_set_reg_STx (CONTEXT * ctx, X86_register r, double v);
@@ -57,19 +57,19 @@ REG CONTEXT_get_reg (CONTEXT * ctx, X86_register r);
 address CONTEXT_calc_adr_of_op (CONTEXT * ctx, Da_op *op);
 void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx);
 
-BOOL is_NZ_cond (const CONTEXT * ctx);
-BOOL is_BE_cond (const CONTEXT * ctx);
-BOOL is_Z_cond (const CONTEXT * ctx);
-BOOL is_O_cond (const CONTEXT * ctx);
-BOOL is_S_cond (const CONTEXT * ctx);
-BOOL is_NS_cond (const CONTEXT * ctx);
-BOOL is_G_cond (const CONTEXT * ctx);
-BOOL is_GE_cond (const CONTEXT * ctx);
-BOOL is_L_cond (const CONTEXT * ctx);
-BOOL is_LE_cond (const CONTEXT * ctx);
-BOOL is_A_cond (const CONTEXT * ctx);
-BOOL is_B_cond (const CONTEXT * ctx);
-BOOL is_NB_cond (const CONTEXT * ctx);
+bool is_NZ_cond (const CONTEXT * ctx);
+bool is_BE_cond (const CONTEXT * ctx);
+bool is_Z_cond (const CONTEXT * ctx);
+bool is_O_cond (const CONTEXT * ctx);
+bool is_S_cond (const CONTEXT * ctx);
+bool is_NS_cond (const CONTEXT * ctx);
+bool is_G_cond (const CONTEXT * ctx);
+bool is_GE_cond (const CONTEXT * ctx);
+bool is_L_cond (const CONTEXT * ctx);
+bool is_LE_cond (const CONTEXT * ctx);
+bool is_A_cond (const CONTEXT * ctx);
+bool is_B_cond (const CONTEXT * ctx);
+bool is_NB_cond (const CONTEXT * ctx);
 
 void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t);
 

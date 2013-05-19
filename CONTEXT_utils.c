@@ -15,108 +15,108 @@ void set_or_clear_flag (CONTEXT * ctx, int flag, uint64_t cond)
         REMOVE_BIT (ctx->EFlags, flag);
 };
 
-BOOL is_NZ_cond (const CONTEXT * ctx)
+bool is_NZ_cond (const CONTEXT * ctx)
 {
-    if (IS_SET (ctx->EFlags, FLAG_ZF)==FALSE)
-        return TRUE;
+    if (IS_SET (ctx->EFlags, FLAG_ZF)==false)
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_BE_cond (const CONTEXT * ctx)
+bool is_BE_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_CF) || IS_SET (ctx->EFlags, FLAG_ZF))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_Z_cond (const CONTEXT * ctx)
+bool is_Z_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_ZF))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_O_cond (const CONTEXT * ctx)
+bool is_O_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_OF))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_S_cond (const CONTEXT * ctx)
+bool is_S_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_SF))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_NS_cond (const CONTEXT * ctx)
+bool is_NS_cond (const CONTEXT * ctx)
 {
-    if (IS_SET (ctx->EFlags, FLAG_SF)==FALSE)
-        return TRUE;
+    if (IS_SET (ctx->EFlags, FLAG_SF)==false)
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_G_cond (const CONTEXT * ctx)
+bool is_G_cond (const CONTEXT * ctx)
 {
-    if (IS_SET (ctx->EFlags, FLAG_ZF)==FALSE && (IS_SET (ctx->EFlags, FLAG_SF)==IS_SET (ctx->EFlags, FLAG_OF)))
-        return TRUE;
+    if (IS_SET (ctx->EFlags, FLAG_ZF)==false && (IS_SET (ctx->EFlags, FLAG_SF)==IS_SET (ctx->EFlags, FLAG_OF)))
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_GE_cond (const CONTEXT * ctx)
+bool is_GE_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_SF)==IS_SET (ctx->EFlags, FLAG_OF))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_L_cond (const CONTEXT * ctx)
+bool is_L_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_SF)!=IS_SET (ctx->EFlags, FLAG_OF))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_A_cond (const CONTEXT * ctx)
+bool is_A_cond (const CONTEXT * ctx)
 {
-    if ((IS_SET (ctx->EFlags, FLAG_CF)==FALSE) && (IS_SET (ctx->EFlags, FLAG_ZF)==FALSE))
-        return TRUE;
+    if ((IS_SET (ctx->EFlags, FLAG_CF)==false) && (IS_SET (ctx->EFlags, FLAG_ZF)==false))
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_B_cond (const CONTEXT * ctx)
+bool is_B_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_CF))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_NB_cond (const CONTEXT * ctx)
+bool is_NB_cond (const CONTEXT * ctx)
 {
-    if (IS_SET (ctx->EFlags, FLAG_CF)==FALSE)
-        return TRUE;
+    if (IS_SET (ctx->EFlags, FLAG_CF)==false)
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
-BOOL is_LE_cond (const CONTEXT * ctx)
+bool is_LE_cond (const CONTEXT * ctx)
 {
     if (IS_SET (ctx->EFlags, FLAG_ZF) || (IS_SET (ctx->EFlags, FLAG_SF)!=IS_SET (ctx->EFlags, FLAG_OF)))
-        return TRUE;
+        return true;
     else
-        return FALSE;
+        return false;
 };
 
 REG CONTEXT_get_SP (const CONTEXT * ctx)
@@ -294,7 +294,7 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
 
 static uint8_t *empty_XMM_register=(uint8_t *)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, BOOL dump_DRx, BOOL dump_xmm_regs)
+void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_DRx, bool dump_xmm_regs)
 {
     XSAVE_FORMAT t;
     int i;
@@ -349,46 +349,46 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, BOOL dump_DRx, BOOL dump_xmm_reg
     };
 };
 
-BOOL CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2) // ignoring TP/TF flag!
+bool CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2) // ignoring TP/TF flag!
 {
-    BOOL rt=TRUE; // so far so good
+    bool rt=true; // so far so good
     DWORD new_eflags1, new_eflags2;
     XSAVE_FORMAT *t1, *t2;
     unsigned i;
 #ifdef _WIN64
     assert(0);
-    if (ctx1->Rax!=ctx2->Rax) { L_fds (s, "ctx1->RAX=0x" PRI_REG_HEX_PAD " ctx2->RAX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rax, ctx2->Rax); rt=FALSE; }
-    if (ctx1->Rbx!=ctx2->Rbx) { L_fds (s, "ctx1->RBX=0x" PRI_REG_HEX_PAD " ctx2->RBX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rbx, ctx2->Rbx); rt=FALSE; }
-    if (ctx1->Rcx!=ctx2->Rcx) { L_fds (s, "ctx1->RCX=0x" PRI_REG_HEX_PAD " ctx2->RCX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rcx, ctx2->Rcx); rt=FALSE; }
-    if (ctx1->Rdx!=ctx2->Rdx) { L_fds (s, "ctx1->RDX=0x" PRI_REG_HEX_PAD " ctx2->RDX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rdx, ctx2->Rdx); rt=FALSE; }
-    if (ctx1->Rsp!=ctx2->Rsp) { L_fds (s, "ctx1->RSP=0x" PRI_REG_HEX_PAD " ctx2->RSP=0x" PRI_REG_HEX_PAD "\n", ctx1->Rsp, ctx2->Rsp); rt=FALSE; }
-    if (ctx1->Rbp!=ctx2->Rbp) { L_fds (s, "ctx1->RBP=0x" PRI_REG_HEX_PAD " ctx2->RBP=0x" PRI_REG_HEX_PAD "\n", ctx1->Rbp, ctx2->Rbp); rt=FALSE; }
-    if (ctx1->Rsi!=ctx2->Rsi) { L_fds (s, "ctx1->RSI=0x" PRI_REG_HEX_PAD " ctx2->RSI=0x" PRI_REG_HEX_PAD "\n", ctx1->Rsi, ctx2->Rsi); rt=FALSE; }
-    if (ctx1->Rdi!=ctx2->Rdi) { L_fds (s, "ctx1->RDI=0x" PRI_REG_HEX_PAD " ctx2->RDI=0x" PRI_REG_HEX_PAD "\n", ctx1->Rdi, ctx2->Rdi); rt=FALSE; }
-    if (ctx1->R8 !=ctx2->R8)  { L_fds (s, "ctx1->R8 =0x" PRI_REG_HEX_PAD " ctx2->R8 =0x" PRI_REG_HEX_PAD "\n", ctx1->R8,  ctx2->R8);  rt=FALSE; }
-    if (ctx1->R9 !=ctx2->R9)  { L_fds (s, "ctx1->R9 =0x" PRI_REG_HEX_PAD " ctx2->R9 =0x" PRI_REG_HEX_PAD "\n", ctx1->R9,  ctx2->R9);  rt=FALSE; }
-    if (ctx1->R10!=ctx2->R10) { L_fds (s, "ctx1->R10=0x" PRI_REG_HEX_PAD " ctx2->R10=0x" PRI_REG_HEX_PAD "\n", ctx1->R10, ctx2->R10); rt=FALSE; }
-    if (ctx1->R11!=ctx2->R11) { L_fds (s, "ctx1->R11=0x" PRI_REG_HEX_PAD " ctx2->R11=0x" PRI_REG_HEX_PAD "\n", ctx1->R11, ctx2->R11); rt=FALSE; }
-    if (ctx1->R12!=ctx2->R12) { L_fds (s, "ctx1->R12=0x" PRI_REG_HEX_PAD " ctx2->R12=0x" PRI_REG_HEX_PAD "\n", ctx1->R12, ctx2->R12); rt=FALSE; }
-    if (ctx1->R13!=ctx2->R13) { L_fds (s, "ctx1->R13=0x" PRI_REG_HEX_PAD " ctx2->R13=0x" PRI_REG_HEX_PAD "\n", ctx1->R13, ctx2->R13); rt=FALSE; }
-    if (ctx1->R14!=ctx2->R14) { L_fds (s, "ctx1->R14=0x" PRI_REG_HEX_PAD " ctx2->R14=0x" PRI_REG_HEX_PAD "\n", ctx1->R14, ctx2->R14); rt=FALSE; }
-    if (ctx1->R15!=ctx2->R15) { L_fds (s, "ctx1->R15=0x" PRI_REG_HEX_PAD " ctx2->R15=0x" PRI_REG_HEX_PAD "\n", ctx1->R15, ctx2->R15); rt=FALSE; }
-    if (ctx1->Rip!=ctx2->Rip) { L_fds (s, "ctx1->RIP=0x" PRI_REG_HEX_PAD " ctx2->RIP=0x" PRI_REG_HEX_PAD "\n", ctx1->Rip, ctx2->Rip); rt=FALSE; }
+    if (ctx1->Rax!=ctx2->Rax) { L_fds (s, "ctx1->RAX=0x" PRI_REG_HEX_PAD " ctx2->RAX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rax, ctx2->Rax); rt=false; }
+    if (ctx1->Rbx!=ctx2->Rbx) { L_fds (s, "ctx1->RBX=0x" PRI_REG_HEX_PAD " ctx2->RBX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rbx, ctx2->Rbx); rt=false; }
+    if (ctx1->Rcx!=ctx2->Rcx) { L_fds (s, "ctx1->RCX=0x" PRI_REG_HEX_PAD " ctx2->RCX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rcx, ctx2->Rcx); rt=false; }
+    if (ctx1->Rdx!=ctx2->Rdx) { L_fds (s, "ctx1->RDX=0x" PRI_REG_HEX_PAD " ctx2->RDX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rdx, ctx2->Rdx); rt=false; }
+    if (ctx1->Rsp!=ctx2->Rsp) { L_fds (s, "ctx1->RSP=0x" PRI_REG_HEX_PAD " ctx2->RSP=0x" PRI_REG_HEX_PAD "\n", ctx1->Rsp, ctx2->Rsp); rt=false; }
+    if (ctx1->Rbp!=ctx2->Rbp) { L_fds (s, "ctx1->RBP=0x" PRI_REG_HEX_PAD " ctx2->RBP=0x" PRI_REG_HEX_PAD "\n", ctx1->Rbp, ctx2->Rbp); rt=false; }
+    if (ctx1->Rsi!=ctx2->Rsi) { L_fds (s, "ctx1->RSI=0x" PRI_REG_HEX_PAD " ctx2->RSI=0x" PRI_REG_HEX_PAD "\n", ctx1->Rsi, ctx2->Rsi); rt=false; }
+    if (ctx1->Rdi!=ctx2->Rdi) { L_fds (s, "ctx1->RDI=0x" PRI_REG_HEX_PAD " ctx2->RDI=0x" PRI_REG_HEX_PAD "\n", ctx1->Rdi, ctx2->Rdi); rt=false; }
+    if (ctx1->R8 !=ctx2->R8)  { L_fds (s, "ctx1->R8 =0x" PRI_REG_HEX_PAD " ctx2->R8 =0x" PRI_REG_HEX_PAD "\n", ctx1->R8,  ctx2->R8);  rt=false; }
+    if (ctx1->R9 !=ctx2->R9)  { L_fds (s, "ctx1->R9 =0x" PRI_REG_HEX_PAD " ctx2->R9 =0x" PRI_REG_HEX_PAD "\n", ctx1->R9,  ctx2->R9);  rt=false; }
+    if (ctx1->R10!=ctx2->R10) { L_fds (s, "ctx1->R10=0x" PRI_REG_HEX_PAD " ctx2->R10=0x" PRI_REG_HEX_PAD "\n", ctx1->R10, ctx2->R10); rt=false; }
+    if (ctx1->R11!=ctx2->R11) { L_fds (s, "ctx1->R11=0x" PRI_REG_HEX_PAD " ctx2->R11=0x" PRI_REG_HEX_PAD "\n", ctx1->R11, ctx2->R11); rt=false; }
+    if (ctx1->R12!=ctx2->R12) { L_fds (s, "ctx1->R12=0x" PRI_REG_HEX_PAD " ctx2->R12=0x" PRI_REG_HEX_PAD "\n", ctx1->R12, ctx2->R12); rt=false; }
+    if (ctx1->R13!=ctx2->R13) { L_fds (s, "ctx1->R13=0x" PRI_REG_HEX_PAD " ctx2->R13=0x" PRI_REG_HEX_PAD "\n", ctx1->R13, ctx2->R13); rt=false; }
+    if (ctx1->R14!=ctx2->R14) { L_fds (s, "ctx1->R14=0x" PRI_REG_HEX_PAD " ctx2->R14=0x" PRI_REG_HEX_PAD "\n", ctx1->R14, ctx2->R14); rt=false; }
+    if (ctx1->R15!=ctx2->R15) { L_fds (s, "ctx1->R15=0x" PRI_REG_HEX_PAD " ctx2->R15=0x" PRI_REG_HEX_PAD "\n", ctx1->R15, ctx2->R15); rt=false; }
+    if (ctx1->Rip!=ctx2->Rip) { L_fds (s, "ctx1->RIP=0x" PRI_REG_HEX_PAD " ctx2->RIP=0x" PRI_REG_HEX_PAD "\n", ctx1->Rip, ctx2->Rip); rt=false; }
 #else
-    if (ctx1->Eax!=ctx2->Eax) { L_fds (s, "ctx1->EAX=0x" PRI_REG_HEX_PAD " ctx2->EAX=0x" PRI_REG_HEX_PAD "\n", ctx1->Eax, ctx2->Eax); rt=FALSE; }
-    if (ctx1->Ebx!=ctx2->Ebx) { L_fds (s, "ctx1->EBX=0x" PRI_REG_HEX_PAD " ctx2->EBX=0x" PRI_REG_HEX_PAD "\n", ctx1->Ebx, ctx2->Ebx); rt=FALSE; }
-    if (ctx1->Ecx!=ctx2->Ecx) { L_fds (s, "ctx1->ECX=0x" PRI_REG_HEX_PAD " ctx2->ECX=0x" PRI_REG_HEX_PAD "\n", ctx1->Ecx, ctx2->Ecx); rt=FALSE; }
-    if (ctx1->Edx!=ctx2->Edx) { L_fds (s, "ctx1->EDX=0x" PRI_REG_HEX_PAD " ctx2->EDX=0x" PRI_REG_HEX_PAD "\n", ctx1->Edx, ctx2->Edx); rt=FALSE; }
-    if (ctx1->Esi!=ctx2->Esi) { L_fds (s, "ctx1->ESI=0x" PRI_REG_HEX_PAD " ctx2->ESI=0x" PRI_REG_HEX_PAD "\n", ctx1->Esi, ctx2->Esi); rt=FALSE; }
-    if (ctx1->Edi!=ctx2->Edi) { L_fds (s, "ctx1->EDI=0x" PRI_REG_HEX_PAD " ctx2->EDI=0x" PRI_REG_HEX_PAD "\n", ctx1->Edi, ctx2->Edi); rt=FALSE; }
-    if (ctx1->Eip!=ctx2->Eip) { L_fds (s, "ctx1->EIP=0x" PRI_REG_HEX_PAD " ctx2->EIP=0x" PRI_REG_HEX_PAD "\n", ctx1->Eip, ctx2->Eip); rt=FALSE; }
-    if (ctx1->Esp!=ctx2->Esp) { L_fds (s, "ctx1->ESP=0x" PRI_REG_HEX_PAD " ctx2->ESP=0x" PRI_REG_HEX_PAD "\n", ctx1->Esp, ctx2->Esp); rt=FALSE; }
+    if (ctx1->Eax!=ctx2->Eax) { L_fds (s, "ctx1->EAX=0x" PRI_REG_HEX_PAD " ctx2->EAX=0x" PRI_REG_HEX_PAD "\n", ctx1->Eax, ctx2->Eax); rt=false; }
+    if (ctx1->Ebx!=ctx2->Ebx) { L_fds (s, "ctx1->EBX=0x" PRI_REG_HEX_PAD " ctx2->EBX=0x" PRI_REG_HEX_PAD "\n", ctx1->Ebx, ctx2->Ebx); rt=false; }
+    if (ctx1->Ecx!=ctx2->Ecx) { L_fds (s, "ctx1->ECX=0x" PRI_REG_HEX_PAD " ctx2->ECX=0x" PRI_REG_HEX_PAD "\n", ctx1->Ecx, ctx2->Ecx); rt=false; }
+    if (ctx1->Edx!=ctx2->Edx) { L_fds (s, "ctx1->EDX=0x" PRI_REG_HEX_PAD " ctx2->EDX=0x" PRI_REG_HEX_PAD "\n", ctx1->Edx, ctx2->Edx); rt=false; }
+    if (ctx1->Esi!=ctx2->Esi) { L_fds (s, "ctx1->ESI=0x" PRI_REG_HEX_PAD " ctx2->ESI=0x" PRI_REG_HEX_PAD "\n", ctx1->Esi, ctx2->Esi); rt=false; }
+    if (ctx1->Edi!=ctx2->Edi) { L_fds (s, "ctx1->EDI=0x" PRI_REG_HEX_PAD " ctx2->EDI=0x" PRI_REG_HEX_PAD "\n", ctx1->Edi, ctx2->Edi); rt=false; }
+    if (ctx1->Eip!=ctx2->Eip) { L_fds (s, "ctx1->EIP=0x" PRI_REG_HEX_PAD " ctx2->EIP=0x" PRI_REG_HEX_PAD "\n", ctx1->Eip, ctx2->Eip); rt=false; }
+    if (ctx1->Esp!=ctx2->Esp) { L_fds (s, "ctx1->ESP=0x" PRI_REG_HEX_PAD " ctx2->ESP=0x" PRI_REG_HEX_PAD "\n", ctx1->Esp, ctx2->Esp); rt=false; }
 #endif
-    if (ctx1->Dr0!=ctx2->Dr0) { L_fds (s, "ctx1->DR0=0x" PRI_REG_HEX_PAD " ctx2->DR0=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr0, ctx2->Dr0); rt=FALSE; }
-    if (ctx1->Dr1!=ctx2->Dr1) { L_fds (s, "ctx1->DR1=0x" PRI_REG_HEX_PAD " ctx2->DR1=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr1, ctx2->Dr1); rt=FALSE; }
-    if (ctx1->Dr2!=ctx2->Dr2) { L_fds (s, "ctx1->DR2=0x" PRI_REG_HEX_PAD " ctx2->DR2=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr2, ctx2->Dr2); rt=FALSE; }
-    if (ctx1->Dr3!=ctx2->Dr3) { L_fds (s, "ctx1->DR3=0x" PRI_REG_HEX_PAD " ctx2->DR3=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr3, ctx2->Dr3); rt=FALSE; }
-    //if (ctx1->Dr6!=ctx2->Dr6) { L ("ctx1->DR6=0x" PRI_REG_HEX_PAD " ctx2->DR6=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr6, ctx2->Dr6); rt=FALSE; }
+    if (ctx1->Dr0!=ctx2->Dr0) { L_fds (s, "ctx1->DR0=0x" PRI_REG_HEX_PAD " ctx2->DR0=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr0, ctx2->Dr0); rt=false; }
+    if (ctx1->Dr1!=ctx2->Dr1) { L_fds (s, "ctx1->DR1=0x" PRI_REG_HEX_PAD " ctx2->DR1=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr1, ctx2->Dr1); rt=false; }
+    if (ctx1->Dr2!=ctx2->Dr2) { L_fds (s, "ctx1->DR2=0x" PRI_REG_HEX_PAD " ctx2->DR2=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr2, ctx2->Dr2); rt=false; }
+    if (ctx1->Dr3!=ctx2->Dr3) { L_fds (s, "ctx1->DR3=0x" PRI_REG_HEX_PAD " ctx2->DR3=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr3, ctx2->Dr3); rt=false; }
+    //if (ctx1->Dr6!=ctx2->Dr6) { L ("ctx1->DR6=0x" PRI_REG_HEX_PAD " ctx2->DR6=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr6, ctx2->Dr6); rt=false; }
     if (ctx1->Dr7!=ctx2->Dr7) 
     { 
         L_fds (s, "ctx1->DR7=0x" PRI_REG_HEX_PAD ": ", ctx1->Dr7);
@@ -399,7 +399,7 @@ BOOL CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2) // ign
         dump_DR7(s, ctx2->Dr7);
         L_fds (s, "\n");
 
-        rt=FALSE; 
+        rt=false; 
     }
     new_eflags1=ctx1->EFlags&(~FLAG_TF)&(~FLAG_RSRV1)&(~FLAG_RF);
     new_eflags2=ctx2->EFlags&(~FLAG_TF)&(~FLAG_RSRV1)&(~FLAG_RF);
@@ -413,7 +413,7 @@ BOOL CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2) // ign
         dump_flags(s, new_eflags2);
         L_fds (s, ")\n");
 
-        rt=FALSE;
+        rt=false;
     };
 
 #ifdef _WIN64
@@ -429,7 +429,7 @@ BOOL CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2) // ign
         if (memcmp (&t1->XmmRegisters[i], &t2->XmmRegisters[i], 16)!=0)
         {
             L ("XMM%d is different in ctx1 and ctx2\n", i);
-            rt=FALSE;
+            rt=false;
         };
     };
 
