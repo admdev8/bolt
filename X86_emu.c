@@ -8,7 +8,7 @@
 #include "bitfields.h"
 #include "disas_utils.h"
 
-bool x86_emu_debug=false;
+bool x86_emu_debug=/*true*/ false;
 
 int parity_lookup[256] = {
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
@@ -177,7 +177,7 @@ Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache
     return DA_EMULATED_OK;
 };
 
-Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool testing)
+Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
 {
     //bool SF=IS_SET(ctx->EFlags, FLAG_SF);
     //bool OF=IS_SET(ctx->EFlags, FLAG_OF);
@@ -263,10 +263,6 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool testin
         case I_REP_STOSW:
         case I_REP_STOSD:
             {
-                // FIXME: that instructions should be tested in emu tested!
-                if (testing)
-                    return DA_EMULATED_NOT_SUPPORTED;
-
                 BYTE *buf;
 
                 SIZE_T BUF_SIZE;
@@ -315,8 +311,6 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool testin
             {
                 // FIXME: that instructions should be tested in emu tested!
                 // FIXME: а было бы хорошо чтобы тестилось, ибо еще надо добавить REPE SCASx и тестить
-                if (testing)
-                    return DA_EMULATED_NOT_SUPPORTED;
 
                 BYTE *buf;
 
@@ -805,4 +799,23 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool testin
 add_to_PC_and_return_OK:    
     CONTEXT_add_to_PC(ctx, d->len);
     return DA_EMULATED_OK;
+};
+
+const char* Da_emulate_result_to_string(Da_emulate_result r)
+{
+    switch (r)
+    {
+    case DA_NOT_EMULATED: 
+        return "DA_NOT_EMULATED";
+    case DA_EMULATED_OK: 
+        return "DA_EMULATED_OK";
+    case DA_EMULATED_CANNOT_READ_MEMORY:
+        return "DA_EMULATED_CANNOT_READ_MEMORY";
+    case DA_EMULATED_CANNOT_WRITE_MEMORY:
+        return "DA_EMULATED_CANNOT_WRITE_MEMORY";
+    case DA_EMULATED_NOT_SUPPORTED:
+        return "DA_EMULATED_NOT_SUPPORTED";
+    default:
+        assert(0);
+    };
 };

@@ -17,5 +17,5 @@ Da_emulate_result Da_emulate_MOV_op1_op2(Da *d, CONTEXT * ctx, MemoryCache *mem)
 Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx);
 Da_emulate_result Da_emulate_CMOVcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem);
 Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem);
-Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool testing);
-
+Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem);
+const char* Da_emulate_result_to_string(Da_emulate_result r);

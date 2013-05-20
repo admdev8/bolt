@@ -40,6 +40,7 @@ void CONTEXT_set_xSI (CONTEXT * ctx, REG val);
 REG CONTEXT_get_PC (const CONTEXT * ctx);
 void CONTEXT_set_PC (CONTEXT * ctx, REG PC);
 void CONTEXT_add_to_PC (CONTEXT * ctx, REG i);
+void CONTEXT_decrement_PC (CONTEXT * ctx);
 
 void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a);
 

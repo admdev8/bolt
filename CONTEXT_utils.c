@@ -3,7 +3,7 @@
 
 #include "CONTEXT_utils.h"
 #include "address.h"
-#include "FPU_stuff_asm.h"
+#include "FPU_stuff.h"
 #include "bitfields.h"
 #include "x86.h"
 
@@ -261,6 +261,11 @@ void CONTEXT_set_PC (CONTEXT * ctx, REG PC)
 #else
     ctx->Eip=PC;
 #endif
+};
+
+void CONTEXT_decrement_PC (CONTEXT * ctx)
+{
+    CONTEXT_set_PC(ctx, CONTEXT_get_PC(ctx)-1);
 };
 
 void CONTEXT_add_to_PC (CONTEXT * ctx, REG i)
