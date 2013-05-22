@@ -283,16 +283,14 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
 
     switch (bp_i)
     {
-    case 0: ctx->Dr0=a; break;
-    case 1: ctx->Dr1=a; break;
-    case 2: ctx->Dr2=a; break;
-    case 3: ctx->Dr3=a; break;
+    case 0: ctx->Dr0=a; SET_BIT (ctx->Dr7, FLAG_DR7_L0); break;
+    case 1: ctx->Dr1=a; SET_BIT (ctx->Dr7, FLAG_DR7_L1); break;
+    case 2: ctx->Dr2=a; SET_BIT (ctx->Dr7, FLAG_DR7_L2); break;
+    case 3: ctx->Dr3=a; SET_BIT (ctx->Dr7, FLAG_DR7_L3); break;
     default: 
         assert (0);
         break;
     };
-
-    SET_BIT (ctx->Dr7, REG_1<<(bp_i*2)); // FIXME: FLAG_DR7_Lx here, etc...
 
     //IF_VERBOSE (2, log_stream() << __FUNCTION__ << ": ctx->Dr7 state=0x" << hex << ctx->Dr7 << endl; );
 };
