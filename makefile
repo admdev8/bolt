@@ -6,7 +6,8 @@ PORG=../porg/
 PORG_LIBRARY=$(PORG)porgd.a
 CPPFLAGS=-D_DEBUG -I$(OCTOTHORPE) -I$(X86_DISASM) -I$(PORG)
 CFLAGS=-c -Wall -g -std=gnu99
-SOURCES=CONTEXT_utils.c disas_utils.c memorycache.c X86_register_helpers.c PE.c X86_emu.c
+SOURCES=CONTEXT_utils.c disas_utils.c memorycache.c X86_register_helpers.c PE.c X86_emu.c \
+	bolt_stuff.c
 OBJECTS=$(SOURCES:.c=.o)
 DEPFILES=$(SOURCES:.c=.d)
 LIBRARY=boltd.a
