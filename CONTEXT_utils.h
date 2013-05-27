@@ -73,6 +73,7 @@ bool is_B_cond (const CONTEXT * ctx);
 bool is_NB_cond (const CONTEXT * ctx);
 
 void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t);
+const char *get_BP_register_name();
 
 #ifdef  __cplusplus
 }

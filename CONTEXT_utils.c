@@ -699,3 +699,12 @@ void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t)
             };
         };
 };
+
+const char *get_BP_register_name()
+{
+#ifdef _WIN64
+    return "RBP";
+#else
+    return "EBP";
+#endif
+};
