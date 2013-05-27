@@ -30,4 +30,4 @@ clean:
 # for tests:
 
 %.exe: %.o $(LIBRARY)
-	$(CC) $< $(LIBRARY) $(OCTOTHORPE_LIBRARY) $(PORG_LIBRARY) -lpsapi -limagehlp -o $@
+	$(CC) $< $(LIBRARY) $(OCTOTHORPE)/lisp.o $(OCTOTHORPE_LIBRARY) $(PORG_LIBRARY) -lpsapi -limagehlp -o $@
