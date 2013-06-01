@@ -7,6 +7,16 @@
 #include "bitfields.h"
 #include "x86.h"
 
+void set_TF (CONTEXT *ctx)
+{
+    SET_BIT (ctx->EFlags, FLAG_TF);
+};
+
+void clear_TF (CONTEXT *ctx)
+{
+    REMOVE_BIT (ctx->EFlags, FLAG_TF);
+};
+
 void set_or_clear_flag (CONTEXT * ctx, int flag, uint64_t cond)
 {
     if (cond)
@@ -280,6 +290,8 @@ void CONTEXT_add_to_PC (CONTEXT * ctx, REG i)
 void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
 {
     //IF_VERBOSE (2, log_stream() << __FUNCTION__ << " (bp_i=" << bp_i << " a=" << a << ")\n"; );
+
+    assert(bp_i<4);
 
     switch (bp_i)
     {

@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+void set_TF (CONTEXT *ctx);
+void clear_TF (CONTEXT *ctx);
 void set_or_clear_flag (CONTEXT * ctx, int flag, uint64_t cond);
 
 REG CONTEXT_get_SP (const CONTEXT * ctx);

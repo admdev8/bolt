@@ -70,6 +70,7 @@ bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out);
 void MC_Flush(MemoryCache* mc);
 bool MC_DryRunFlush(MemoryCache* mc);
 void MC_dump_state(fds *s, MemoryCache *mc);
+bool MC_get_any_string (MemoryCache *mem, const address adr, strbuf *out);
 
 #ifdef  __cplusplus
 }

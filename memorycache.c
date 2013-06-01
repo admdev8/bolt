@@ -525,6 +525,35 @@ bool MC_L_print_buf_in_mem_ofs (MemoryCache *mc, address adr, REG size, REG ofs)
 
 bool MC_L_print_buf_in_mem (MemoryCache *mc, address adr, SIZE_T size)
 {
-	return MC_L_print_buf_in_mem_ofs (mc, adr, size, 0);
+    return MC_L_print_buf_in_mem_ofs (mc, adr, size, 0);
 };
 
+bool MC_get_any_string (MemoryCache *mem, const address adr, strbuf *out)
+{
+    bool rt=false;
+    strbuf t=STRBUF_INIT;
+
+    if (MC_GetString (mem, adr, false, &t))
+    {
+        strbuf_addc (out, '\"');
+    	strbuf_addstr (out, t.buf);
+        strbuf_addc (out, '\"');
+    	strbuf_deinit(&t);
+        rt=true;
+        goto exit;
+    };
+
+    if (MC_GetString (mem, adr, true, &t))
+    {
+        strbuf_addstr (out, "L\"");
+    	strbuf_addstr (out, t.buf);
+        strbuf_addc (out, '\"');
+    	strbuf_deinit(&t);
+        rt=true;
+        goto exit;
+    };
+
+exit:
+    strbuf_deinit(&t);
+    return rt;
+};
