@@ -309,7 +309,7 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
 
 static uint8_t *empty_XMM_register=(uint8_t *)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_DRx, bool dump_xmm_regs)
+void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dump_xmm_regs)
 {
     XSAVE_FORMAT t;
     int i;
@@ -344,7 +344,8 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_DRx, bool dump_xmm_reg
     memcpy (&t, &ctx->ExtendedRegisters[0], MAXIMUM_SUPPORTED_EXTENSION);
 #endif
 
-    dump_FPU_in_XSAVE_FORMAT (s, &t);
+    if (dump_FPU)
+        dump_FPU_in_XSAVE_FORMAT (s, &t);
 
     if (sse_supported() && dump_xmm_regs)
     {
@@ -526,37 +527,8 @@ void CONTEXT_set_reg_STx (CONTEXT * ctx, X86_register r, double v)
 #endif
 };
 
-#if 0
-void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
-{
-#if 0
-    L (str (boost::format ("%s (TID=0x%x, bp_i=%d a=%s)\n") % __FUNCTION__ % TID % bp_i % REG_to_str (a)));
-#endif
-
-    switch (bp_i)
-    {
-    case 0: ctx->Dr0=a; break;
-    case 1: ctx->Dr1=a; break;
-    case 2: ctx->Dr2=a; break;
-    case 3: ctx->Dr3=a; break;
-    default: 
-        assert (0);
-        break;
-    };
-
-    SET_BIT (ctx->Dr7, REG_1<<(bp_i*2));
-
-#if 0
-    L ("%s: ctx->Dr7 state=%x\n", __FUNCTION__, ctx->Dr7);
-#endif
-};
-#endif
 void CONTEXT_clear_bp_in_DR7 (CONTEXT * ctx, int bp_n)
 {
-#if 0
-    L ("%s (TID=%d, bp_n=%d)\n", __FUNCTION__, TID, bp_n);
-#endif
-
     REMOVE_BIT (ctx->Dr7, 1<<(bp_n*2));
 };
 
@@ -720,3 +692,31 @@ const char *get_BP_register_name()
     return "EBP";
 #endif
 };
+
+const char *get_AX_register_name()
+{
+#ifdef _WIN64
+    return "RAX";
+#else
+    return "EAX";
+#endif
+};
+
+const char *get_CX_register_name()
+{
+#ifdef _WIN64
+    return "RCX";
+#else
+    return "ECX";
+#endif
+};
+
+const char *get_DX_register_name()
+{
+#ifdef _WIN64
+    return "RDX";
+#else
+    return "EDX";
+#endif
+};
+

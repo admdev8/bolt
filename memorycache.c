@@ -538,7 +538,6 @@ bool MC_get_any_string (MemoryCache *mem, const address adr, strbuf *out)
         strbuf_addc (out, '\"');
     	strbuf_addstr (out, t.buf);
         strbuf_addc (out, '\"');
-    	strbuf_deinit(&t);
         rt=true;
         goto exit;
     };
@@ -548,7 +547,6 @@ bool MC_get_any_string (MemoryCache *mem, const address adr, strbuf *out)
         strbuf_addstr (out, "L\"");
     	strbuf_addstr (out, t.buf);
         strbuf_addc (out, '\"');
-    	strbuf_deinit(&t);
         rt=true;
         goto exit;
     };
