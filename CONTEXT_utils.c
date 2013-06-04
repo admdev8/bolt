@@ -315,7 +315,7 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bo
     int i;
 
 #ifdef _WIN64
-    L_fds (s, "RAX=" PRI_REG_HEX_PAD " RBX=" PRI_REG_HEX_PAD " RCX=" PRI_REG_HEX_PAD "\n", ctx->Rax, ctx->Rbx, ctx->Ecx);
+    L_fds (s, "RAX=" PRI_REG_HEX_PAD " RBX=" PRI_REG_HEX_PAD " RCX=" PRI_REG_HEX_PAD "\n", ctx->Rax, ctx->Rbx, ctx->Rcx);
     L_fds (s, "RDX=" PRI_REG_HEX_PAD " RSP=" PRI_REG_HEX_PAD " RBP=" PRI_REG_HEX_PAD "\n", ctx->Rdx, ctx->Rsp, ctx->Rbp);
     L_fds (s, "RSI=" PRI_REG_HEX_PAD " RDI=" PRI_REG_HEX_PAD " R8 =" PRI_REG_HEX_PAD "\n", ctx->Rsi, ctx->Rdi, ctx->R8 );
     L_fds (s, "R9 =" PRI_REG_HEX_PAD " R10=" PRI_REG_HEX_PAD " R11=" PRI_REG_HEX_PAD "\n", ctx->R9,  ctx->R10, ctx->R11);

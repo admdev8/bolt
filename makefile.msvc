@@ -1,3 +1,4 @@
+# not maintained
 OCTOTHORPE=C:\Users\Administrator\Projects\octothorpe
 OCTOTHORPE_LIB=$(OCTOTHORPE)\octothorped.lib
 DISASM=C:\Users\Administrator\Projects\x86_disasm
