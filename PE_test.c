@@ -6,7 +6,7 @@
 
 void add_symbol (address a, char *name, void *dummy)
 {
-    printf ("add_symbol (0x%x, %s)\n", a, name);
+    printf ("add_symbol (0x%x, %s)\n", (unsigned)a, name);
 };
 
 int main(int argc, char* argv[])
@@ -17,12 +17,12 @@ int main(int argc, char* argv[])
         die ("use: %s filename.(exe|dll)\n", argv[0]);
 
     PE_get_info (argv[1], 0, &info, add_symbol, NULL);
-    printf ("PE32_plus=%d\n", info.PE32_plus);
-    printf ("original_base=0x%x\n", info.original_base);
-    printf ("OEP=0x%x\n", info.OEP);
-    printf ("timestamp=0x%x\n", info.timestamp);
-    printf ("machine=0x%x\n", info.machine);
-    printf ("size=0x%x\n", info.size);
+    printf ("PE32_plus=%d\n", (unsigned)info.PE32_plus);
+    printf ("original_base=0x%x\n", (unsigned)info.original_base);
+    printf ("OEP=0x%x\n", (unsigned)info.OEP);
+    printf ("timestamp=0x%x\n", (unsigned)info.timestamp);
+    printf ("machine=0x%x\n", (unsigned)info.machine);
+    printf ("size=0x%x\n", (unsigned)info.size);
     printf ("internal_name=%s\n", info.internal_name);
     return 0;
 };
