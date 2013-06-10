@@ -309,7 +309,26 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
 
 static uint8_t *empty_XMM_register=(uint8_t *)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dump_xmm_regs)
+void dump_DRx (fds* s, const CONTEXT *ctx)
+{
+#ifdef _WIN64
+    L_fds (s, "DR0=0x" PRI_REG_HEX_PAD "\n", ctx->Dr0);
+    L_fds (s, "DR1=0x" PRI_REG_HEX_PAD "\n", ctx->Dr1);
+    L_fds (s, "DR2=0x" PRI_REG_HEX_PAD "\n", ctx->Dr2);
+    L_fds (s, "DR3=0x" PRI_REG_HEX_PAD "\n", ctx->Dr3);
+    L_fds (s, "DR6=0x" PRI_REG_HEX_PAD "\n", ctx->Dr6);
+    L_fds (s, "DR7=");
+    dump_DR7 (s, ctx->Dr7);
+    L_fds (s, "\n");
+#else
+    L_fds (s, "DR0=0x" PRI_REG_HEX_PAD " DR1=0x" PRI_REG_HEX_PAD " DR2=0x" PRI_REG_HEX_PAD " DR3=0x" PRI_REG_HEX_PAD "\n", ctx->Dr0, ctx->Dr1, ctx->Dr2, ctx->Dr3);
+    L_fds (s, "DR6=0x" PRI_REG_HEX_PAD " DR7=", ctx->Dr6);
+    dump_DR7 (s, ctx->Dr7);
+    L_fds (s, "\n");
+#endif    
+};
+
+void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool _dump_DRx, bool dump_xmm_regs)
 {
     XSAVE_FORMAT t;
     int i;
@@ -330,13 +349,8 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bo
     dump_flags(s, ctx->EFlags);
     L_fds (s, "\n");
 
-    if (dump_DRx)
-    {
-        L_fds (s, "DR0=0x" PRI_REG_HEX_PAD " DR0=0x" PRI_REG_HEX_PAD " DR0=0x" PRI_REG_HEX_PAD " DR0=0x" PRI_REG_HEX_PAD "\n", ctx->Dr0, ctx->Dr1, ctx->Dr2, ctx->Dr3);
-        L_fds (s, "DR6=0x" PRI_REG_HEX_PAD " DR7=", ctx->Dr6);
-        dump_DR7 (s, ctx->Dr7);
-        L_fds (s, "\n");
-    };
+    if (_dump_DRx)
+        dump_DRx(s, ctx);
 
 #ifdef _WIN64
     memcpy (&t, &ctx->FltSave, sizeof (XSAVE_FORMAT));

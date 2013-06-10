@@ -46,6 +46,7 @@ void CONTEXT_decrement_PC (CONTEXT * ctx);
 
 void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a);
 
+void dump_DRx (fds* s, const CONTEXT *ctx);
 void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dump_xmm_regs);
 
 bool CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2);
