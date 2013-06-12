@@ -463,6 +463,8 @@ static bool my_isprint (char a)
 
 // FIXME: slow
 // can output something to out, but eventually return false
+// in case of "\x00" returns true, meaning, empty string
+// emptry strings like " " are OK too. I need another function for string validity checking!
 bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out)
 {
     int step, i;
@@ -479,7 +481,7 @@ bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out)
         return false; // memory read error
 
     if (_out==0)
-        return false; // read OK, but no string
+        return true; // read OK, empty string
 
     for (i=0; ; i=i+step)
     {
@@ -498,16 +500,7 @@ bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out)
         };
     };
 
-    if (chars_read>3)
-    {
-        //L (2, __FUNCTION__"() (per-byte read) out=[%s]\n", out.c_str());
-        return true;
-    }
-    else
-    {
-        //L (2, __FUNCTION__"() (per-byte read) too short string rt=[%s], suppress it\n", rt.c_str());
-        return false;
-    };
+    return true;
 };
 
 bool MC_L_print_buf_in_mem_ofs (MemoryCache *mc, address adr, REG size, REG ofs)
