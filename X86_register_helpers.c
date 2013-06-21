@@ -248,6 +248,14 @@ void X86_register_set_value (X86_register r, CONTEXT *ctx, s_Value *val)
         break;
 
 #ifdef _WIN64
+    case R_R8D:  assert (val->t==V_DWORD); ctx->R8= (ctx->R8&0xFFFFFFFF00000000)  | (val->u.v&0xFFFFFFFF); break;
+    case R_R9D:  assert (val->t==V_DWORD); ctx->R9= (ctx->R9&0xFFFFFFFF00000000)  | (val->u.v&0xFFFFFFFF); break;
+    case R_R10D: assert (val->t==V_DWORD); ctx->R10=(ctx->R10&0xFFFFFFFF00000000) | (val->u.v&0xFFFFFFFF); break;
+    case R_R11D: assert (val->t==V_DWORD); ctx->R11=(ctx->R11&0xFFFFFFFF00000000) | (val->u.v&0xFFFFFFFF); break;
+    case R_R12D: assert (val->t==V_DWORD); ctx->R12=(ctx->R12&0xFFFFFFFF00000000) | (val->u.v&0xFFFFFFFF); break;
+    case R_R13D: assert (val->t==V_DWORD); ctx->R13=(ctx->R13&0xFFFFFFFF00000000) | (val->u.v&0xFFFFFFFF); break;
+    case R_R14D: assert (val->t==V_DWORD); ctx->R14=(ctx->R14&0xFFFFFFFF00000000) | (val->u.v&0xFFFFFFFF); break;
+    case R_R15D: assert (val->t==V_DWORD); ctx->R15=(ctx->R15&0xFFFFFFFF00000000) | (val->u.v&0xFFFFFFFF); break;
         // TODO: a lot
 #else
     case R_EAX: assert (val->t==V_DWORD); ctx->Eax=val->u.v&0xFFFFFFFF; break;

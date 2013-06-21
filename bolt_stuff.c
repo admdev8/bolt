@@ -1,6 +1,7 @@
 #include <assert.h>
 #include "stuff.h"
 #include "bolt_stuff.h"
+#include "porg_utils.h"
 
 // NtQueryInformationThread retrieves information about a thread object.
 /*
