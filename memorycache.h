@@ -64,6 +64,8 @@ bool MC_WriteOctabyte (MemoryCache* mc, address, DWORD64);
 
 bool MC_ReadREG (MemoryCache* mc, address, REG * out);
 bool MC_WriteREG (MemoryCache* mc, address, REG);
+    
+bool MC_WriteValue(MemoryCache *mc, address adr, unsigned width, REG val);
 
 bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out);
     

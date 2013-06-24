@@ -548,3 +548,18 @@ exit:
     strbuf_deinit(&t);
     return rt;
 };
+
+bool MC_WriteValue(MemoryCache *mc, address adr, unsigned width, REG val)
+{
+    switch (width)
+    {
+        case 1: return MC_WriteByte (mc, adr, val&0xFF);
+        case 2: return MC_WriteWyde (mc, adr, val&0xFFFF);
+        case 4: return MC_WriteTetrabyte (mc, adr, val&0xFFFFFFFF);
+        case 8: return MC_WriteOctabyte (mc, adr, val);
+        default:
+                assert(0);
+                return false; // TMCH
+    };
+};
+
