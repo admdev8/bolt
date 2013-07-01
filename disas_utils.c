@@ -96,11 +96,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 M128A xmm;
                 if (MC_ReadBuffer (mem, *rt_adr, sizeof (M128A), (BYTE*)&xmm)==false)
                     return false;
-                //L ("%s(). rt_adr=0x%x\n", __FUNCTION__, rt_adr);
-                //L_print_buf ((BYTE*)&xmm, 16);
                 create_XMM_Value ((uint8_t*)&xmm, result);
-                //printf ("%s(): val after constructing:\n", __FUNCTION__);
-                //val.dump();
                 return true;
             };
         default:

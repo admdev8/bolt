@@ -62,7 +62,7 @@ void CONTEXT_decrement_PC (CONTEXT * ctx);
 void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a);
 
 void dump_DRx (fds* s, const CONTEXT *ctx);
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dump_xmm_regs);
+void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_DRx, bool dump_xmm_regs);
 
 bool CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2);
 
@@ -91,6 +91,7 @@ bool is_B_cond (const CONTEXT * ctx);
 bool is_NB_cond (const CONTEXT * ctx);
 
 void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t);
+void dump_FPU_in_FLOATING_SAVE_AREA_if_need (fds* s, FLOATING_SAVE_AREA *f);
 const char *get_BP_register_name();
 const char *get_AX_register_name();
 const char *get_CX_register_name();

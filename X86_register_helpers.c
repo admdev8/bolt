@@ -22,7 +22,12 @@
 
 void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
 {
-    XSAVE_FORMAT* t;
+#ifdef _WIN64
+    XSAVE_FORMAT *t=(XSAVE_FORMAT*)&ctx->FltSave;
+#else
+    XSAVE_FORMAT *t=(XSAVE_FORMAT*)&ctx->ExtendedRegisters[0];
+    FLOATING_SAVE_AREA *f=&ctx->FloatSave;
+#endif
 
     switch (r)
     {
@@ -163,11 +168,6 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
     case R_XMM13:
     case R_XMM14:
     case R_XMM15:
-#ifdef _WIN64
-        t=(XSAVE_FORMAT*)&ctx->FltSave;
-#else
-        t=(XSAVE_FORMAT*)&ctx->ExtendedRegisters[0];
-#endif
         switch (r)
         {
         case R_XMM0: create_XMM_Value ((uint8_t*)&t->XmmRegisters[0], out); break;
@@ -189,6 +189,15 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
         default: assert(0);
         };
         break;
+
+    case R_ST0: create_double_Value ((double)(*(long double*)&f->RegisterArea[0*10]), out); break;
+    case R_ST1: create_double_Value ((double)(*(long double*)&f->RegisterArea[1*10]), out); break;
+    case R_ST2: create_double_Value ((double)(*(long double*)&f->RegisterArea[2*10]), out); break;
+    case R_ST3: create_double_Value ((double)(*(long double*)&f->RegisterArea[3*10]), out); break;
+    case R_ST4: create_double_Value ((double)(*(long double*)&f->RegisterArea[4*10]), out); break;
+    case R_ST5: create_double_Value ((double)(*(long double*)&f->RegisterArea[5*10]), out); break;
+    case R_ST6: create_double_Value ((double)(*(long double*)&f->RegisterArea[6*10]), out); break;
+    case R_ST7: create_double_Value ((double)(*(long double*)&f->RegisterArea[7*10]), out); break;
 
     case R_ABSENT:
         assert(0);
@@ -212,7 +221,11 @@ uint64_t X86_register_get_value_as_u64 (X86_register r, const CONTEXT *ctx)
 
 void X86_register_set_value (X86_register r, CONTEXT *ctx, s_Value *val)
 {
-    XSAVE_FORMAT* t;
+#ifdef _WIN64
+    XSAVE_FORMAT *t=(XSAVE_FORMAT*)&ctx->FltSave;
+#else
+    XSAVE_FORMAT *t=(XSAVE_FORMAT*)&ctx->ExtendedRegisters[0];
+#endif
 
     switch (r)
     {
@@ -232,12 +245,6 @@ void X86_register_set_value (X86_register r, CONTEXT *ctx, s_Value *val)
     case R_XMM13:
     case R_XMM14:
     case R_XMM15:
-
-#ifdef _WIN64
-        t=(XSAVE_FORMAT*)&ctx->FltSave;
-#else
-        t=(XSAVE_FORMAT*)&ctx->ExtendedRegisters[0];
-#endif
 
         switch (r)
         {

@@ -343,7 +343,7 @@ void dump_DRx (fds* s, const CONTEXT *ctx)
 #endif    
 };
 
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool _dump_DRx, bool dump_xmm_regs)
+void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool _dump_DRx, bool dump_xmm_regs)
 {
     XSAVE_FORMAT t;
     int i;
@@ -373,8 +373,7 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool _dump_DRx, b
     memcpy (&t, &ctx->ExtendedRegisters[0], MAXIMUM_SUPPORTED_EXTENSION);
 #endif
 
-    if (dump_FPU)
-        dump_FPU_in_XSAVE_FORMAT (s, &t);
+    dump_FPU_in_FLOATING_SAVE_AREA_if_need(s, &ctx->FloatSave);
 
     if (sse_supported() && dump_xmm_regs)
     {
@@ -676,6 +675,7 @@ void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx)
     L_fds (s, "\n");
 };
 
+// not sure it works
 void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t)
 {
     strbuf sb_FCW=STRBUF_INIT;
@@ -690,6 +690,7 @@ void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t)
 
     L_fds (s, "FPU ControlWord=%s\n", sb_FCW.buf);
     L_fds (s, "FPU StatusWord=%s\n", sb_FSW.buf);
+    L_fds (s, "FPU TagWord=0x%x\n", t->TagWord);
     strbuf_deinit(&sb_FCW);
     strbuf_deinit(&sb_FSW);
 
@@ -699,7 +700,46 @@ void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t)
             BYTE *b=(BYTE*)&t->FloatRegisters[r];
             double a;
 
-            a=cvt80to64 (b);
+            //a=cvt80to64 (b);
+            a=(double)*(long double*)b;
+
+            if (_isnan (a)==0)
+                L_fds (s, "FPU ST(%d): %lf\n", r, a);
+            else
+            {
+                L_fds (s, "FPU ST(%d): %lf / MM%d=", r, a, r);
+                for (i=0; i<8; i++)
+                    L_fds (s, "%02X", *(b+(7-i)));
+                L_fds (s, "\n");
+            };
+        };
+};
+
+void dump_FPU_in_FLOATING_SAVE_AREA_if_need (fds* s, FLOATING_SAVE_AREA *f)
+{
+    strbuf sb_FCW=STRBUF_INIT;
+    strbuf sb_FSW=STRBUF_INIT;
+    unsigned r, i;
+    
+    if (f->TagWord==0)
+        return;
+
+    FCW_to_str(f->ControlWord, &sb_FCW);
+    FSW_to_str(f->StatusWord, &sb_FSW);
+
+    L_fds (s, "FPU ControlWord=%s\n", sb_FCW.buf);
+    L_fds (s, "FPU StatusWord=%s\n", sb_FSW.buf);
+    strbuf_deinit(&sb_FCW);
+    strbuf_deinit(&sb_FSW);
+
+    for (r=0; r<8; r++)
+        if (IS_SET (f->TagWord, 1<<(7-r)))
+        {
+            BYTE *b=(BYTE*)&f->RegisterArea[r*10];
+            double a;
+
+            //a=cvt80to64 (b);
+            a=(double)*(long double*)b;
 
             if (_isnan (a)==0)
                 L_fds (s, "FPU ST(%d): %lf\n", r, a);
