@@ -14,7 +14,7 @@
  */
 
 #include <windows.h>
-#include "mingw_addons.h"
+#include "bolt_mingw_addons.h"
 #include "address.h"
 #include "memorycache.h"
 

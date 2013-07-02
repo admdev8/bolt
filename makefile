@@ -39,4 +39,5 @@ $(OUTDIR)/%.o: %.c
 # for tests:
 
 %.exe: %.o $(LIBRARY)
-	$(CC) $< $(LIBRARY) $(OCTOTHORPE_LIBRARY) $(OCTOTHORPE_LIBRARY_PATH)/lisp.o $(PORG_LIBRARY) -lpsapi -limagehlp -o $@
+#	$(CC) $< $(LIBRARY) $(OCTOTHORPE_LIBRARY) $(OCTOTHORPE_LIBRARY_PATH)/lisp.o $(PORG_LIBRARY) -lpsapi -limagehlp -o $@
+	$(CC) $< $(LIBRARY) $(OCTOTHORPE_LIBRARY) $(OCTOTHORPE_LIBRARY_PATH)/lisp.o $(PORG_LIBRARY) -lpsapi -ldbghelp -limagehlp -o $@

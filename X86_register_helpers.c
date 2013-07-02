@@ -17,7 +17,7 @@
 
 #include <assert.h>
 
-#include "mingw_addons.h"
+#include "bolt_mingw_addons.h"
 #include "X86_register.h"
 
 void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
@@ -26,7 +26,6 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
     XSAVE_FORMAT *t=(XSAVE_FORMAT*)&ctx->FltSave;
 #else
     XSAVE_FORMAT *t=(XSAVE_FORMAT*)&ctx->ExtendedRegisters[0];
-    FLOATING_SAVE_AREA *f=&ctx->FloatSave;
 #endif
 
     switch (r)
@@ -151,7 +150,7 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
     case R_GS: create_Value(V_WORD, (uint16_t)ctx->SegGs, out); break;
     case R_CS: create_Value(V_WORD, (uint16_t)ctx->SegCs, out); break;
     case R_SS: create_Value(V_WORD, (uint16_t)ctx->SegSs, out); break;
-
+    
     case R_XMM0:
     case R_XMM1:
     case R_XMM2:
@@ -189,15 +188,15 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, s_Value* out)
         default: assert(0);
         };
         break;
-
-    case R_ST0: create_double_Value ((double)(*(long double*)&f->RegisterArea[0*10]), out); break;
-    case R_ST1: create_double_Value ((double)(*(long double*)&f->RegisterArea[1*10]), out); break;
-    case R_ST2: create_double_Value ((double)(*(long double*)&f->RegisterArea[2*10]), out); break;
-    case R_ST3: create_double_Value ((double)(*(long double*)&f->RegisterArea[3*10]), out); break;
-    case R_ST4: create_double_Value ((double)(*(long double*)&f->RegisterArea[4*10]), out); break;
-    case R_ST5: create_double_Value ((double)(*(long double*)&f->RegisterArea[5*10]), out); break;
-    case R_ST6: create_double_Value ((double)(*(long double*)&f->RegisterArea[6*10]), out); break;
-    case R_ST7: create_double_Value ((double)(*(long double*)&f->RegisterArea[7*10]), out); break;
+    
+    case R_ST0: create_double_Value ((double)(*(long double*)&t->FloatRegisters[0]), out); break;
+    case R_ST1: create_double_Value ((double)(*(long double*)&t->FloatRegisters[1]), out); break;
+    case R_ST2: create_double_Value ((double)(*(long double*)&t->FloatRegisters[2]), out); break;
+    case R_ST3: create_double_Value ((double)(*(long double*)&t->FloatRegisters[3]), out); break;
+    case R_ST4: create_double_Value ((double)(*(long double*)&t->FloatRegisters[4]), out); break;
+    case R_ST5: create_double_Value ((double)(*(long double*)&t->FloatRegisters[5]), out); break;
+    case R_ST6: create_double_Value ((double)(*(long double*)&t->FloatRegisters[6]), out); break;
+    case R_ST7: create_double_Value ((double)(*(long double*)&t->FloatRegisters[7]), out); break;
 
     case R_ABSENT:
         assert(0);

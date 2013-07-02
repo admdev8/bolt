@@ -23,8 +23,6 @@
 
 typedef ULONG_PTR KAFFINITY, *PKAFFINITY;
 
-#define CONTEXT_ALL (CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_SEGMENTS | CONTEXT_FLOATING_POINT | CONTEXT_DEBUG_REGISTERS)
-
 #ifndef _WIN64
 typedef struct _M128A {
     ULONGLONG Low;
@@ -32,6 +30,7 @@ typedef struct _M128A {
 } M128A, *PM128A;
 #endif
 
+// same as XMM_SAVE_AREA32
 typedef struct _XSAVE_FORMAT {
     WORD   ControlWord;
     WORD   StatusWord;
@@ -112,22 +111,5 @@ typedef enum _THREADINFOCLASS {        //        Query    Set        Notes
 } THREADINFOCLASS;
 
 #define _NTNATIVE_SELECT_NT(exp) exp
-
-#if 0
-#define NT_SUCCESS(Status) ((_NTNATIVE_SELECT_NT(NTSTATUS))(Status) >= 0)
-
-#if (_MSC_VER >= 800) || defined(_STDCALL_SUPPORTED)
-#define NTAPI __stdcall
-#else
-#define _cdecl
-#define NTAPI
-#endif
-
-#if !defined(_NTSYSTEM_)
-#define NTSYSAPI DECLSPEC_IMPORT
-#else
-#define NTSYSAPI DECLSPEC_EXPORT
-#endif
-#endif
 
 #endif // _MSC_VER

@@ -343,9 +343,13 @@ void dump_DRx (fds* s, const CONTEXT *ctx)
 #endif    
 };
 
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool _dump_DRx, bool dump_xmm_regs)
+void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dump_xmm_regs)
 {
-    XSAVE_FORMAT t;
+#ifdef _WIN64
+    XSAVE_FORMAT *x=&ctx->FltSave;
+#else
+    XSAVE_FORMAT *x=&ctx->ExtendedRegisters[0];
+#endif
     int i;
 
 #ifdef _WIN64
@@ -364,30 +368,24 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool _dump_DRx, bool dump_xmm_re
     dump_flags(s, ctx->EFlags);
     L_fds (s, "\n");
 
-    if (_dump_DRx)
+    if (dump_DRx)
         dump_DRx(s, ctx);
 
-#ifdef _WIN64
-    memcpy (&t, &ctx->FltSave, sizeof (XSAVE_FORMAT));
-#else
-    memcpy (&t, &ctx->ExtendedRegisters[0], MAXIMUM_SUPPORTED_EXTENSION);
-#endif
-
-    dump_FPU_in_FLOATING_SAVE_AREA_if_need(s, &ctx->FloatSave);
+    dump_FPU_in_XSAVE_FORMAT(s, x);
 
     if (sse_supported() && dump_xmm_regs)
     {
         strbuf sb_MXCSR=STRBUF_INIT;
-        MXCSR_to_str(t.MxCsr, &sb_MXCSR);
+        MXCSR_to_str(x->MxCsr, &sb_MXCSR);
         L_fds(s, "MxCsr=%s\n", sb_MXCSR.buf);
         strbuf_deinit(&sb_MXCSR);
-
-        for (i=0; i<16; i++)
-            if (memcmp (((BYTE*)&t.XmmRegisters[i]), empty_XMM_register, 16)!=0) // isn't empty?
+        
+        for (i=0; i<XMM_REGISTERS_TOTAL; i++)
+            if (memcmp (((BYTE*)&x->XmmRegisters[i]), empty_XMM_register, 16)!=0) // isn't empty?
             {
                 strbuf sb=STRBUF_INIT;
-                XMM_to_strbuf((BYTE*)&t.XmmRegisters[i], &sb);
-                L_fds (s, "XMM%d = %s\n", sb.buf);
+                XMM_to_strbuf((BYTE*)&x->XmmRegisters[i], &sb);
+                L_fds (s, "XMM%d = %s\n", i, sb.buf);
                 strbuf_deinit(&sb);
             };
     };
@@ -675,67 +673,28 @@ void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx)
     L_fds (s, "\n");
 };
 
-// not sure it works
-void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *t)
+void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *x)
 {
     strbuf sb_FCW=STRBUF_INIT;
     strbuf sb_FSW=STRBUF_INIT;
     unsigned r, i;
     
-    if (t->TagWord==0)
+    if (x->TagWord==0)
         return;
 
-    FCW_to_str(t->ControlWord, &sb_FCW);
-    FSW_to_str(t->StatusWord, &sb_FSW);
+    FCW_to_str(x->ControlWord, &sb_FCW);
+    FSW_to_str(x->StatusWord, &sb_FSW);
 
     L_fds (s, "FPU ControlWord=%s\n", sb_FCW.buf);
     L_fds (s, "FPU StatusWord=%s\n", sb_FSW.buf);
-    L_fds (s, "FPU TagWord=0x%x\n", t->TagWord);
+    L_fds (s, "FPU TagWord=0x%x\n", x->TagWord);
     strbuf_deinit(&sb_FCW);
     strbuf_deinit(&sb_FSW);
 
     for (r=0; r<8; r++)
-        if (IS_SET (t->TagWord, 1<<(7-r)))
+        if (IS_SET (x->TagWord, 1<<(7-r)))
         {
-            BYTE *b=(BYTE*)&t->FloatRegisters[r];
-            double a;
-
-            //a=cvt80to64 (b);
-            a=(double)*(long double*)b;
-
-            if (_isnan (a)==0)
-                L_fds (s, "FPU ST(%d): %lf\n", r, a);
-            else
-            {
-                L_fds (s, "FPU ST(%d): %lf / MM%d=", r, a, r);
-                for (i=0; i<8; i++)
-                    L_fds (s, "%02X", *(b+(7-i)));
-                L_fds (s, "\n");
-            };
-        };
-};
-
-void dump_FPU_in_FLOATING_SAVE_AREA_if_need (fds* s, FLOATING_SAVE_AREA *f)
-{
-    strbuf sb_FCW=STRBUF_INIT;
-    strbuf sb_FSW=STRBUF_INIT;
-    unsigned r, i;
-    
-    if (f->TagWord==0)
-        return;
-
-    FCW_to_str(f->ControlWord, &sb_FCW);
-    FSW_to_str(f->StatusWord, &sb_FSW);
-
-    L_fds (s, "FPU ControlWord=%s\n", sb_FCW.buf);
-    L_fds (s, "FPU StatusWord=%s\n", sb_FSW.buf);
-    strbuf_deinit(&sb_FCW);
-    strbuf_deinit(&sb_FSW);
-
-    for (r=0; r<8; r++)
-        if (IS_SET (f->TagWord, 1<<(7-r)))
-        {
-            BYTE *b=(BYTE*)&f->RegisterArea[r*10];
+            BYTE *b=(BYTE*)&x->FloatRegisters[r];
             double a;
 
             //a=cvt80to64 (b);
