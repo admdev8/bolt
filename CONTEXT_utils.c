@@ -22,6 +22,25 @@
 #include "bitfields.h"
 #include "x86.h"
 
+XSAVE_FORMAT* get_XSAVE_FORMAT(CONTEXT *ctx)
+{
+#ifdef _WIN64
+    return &ctx->FltSave;
+#else
+    return &ctx->ExtendedRegisters[0];
+#endif
+};
+
+bool STx_present_in_tag(CONTEXT *ctx, unsigned reg)
+{
+    return IS_SET(get_XSAVE_FORMAT(ctx)->TagWord, 1<<(7-reg));
+};
+
+double get_STx (CONTEXT *ctx, unsigned reg)
+{
+    return (double)*(long double*)&get_XSAVE_FORMAT(ctx)->FloatRegisters[reg];
+};
+
 void set_TF (CONTEXT *ctx)
 {
     SET_BIT (ctx->EFlags, FLAG_TF);
@@ -343,13 +362,9 @@ void dump_DRx (fds* s, const CONTEXT *ctx)
 #endif    
 };
 
-void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dump_xmm_regs)
+void dump_CONTEXT (fds* s, CONTEXT * ctx, bool _dump_FPU, bool _dump_DRx, bool dump_xmm_regs)
 {
-#ifdef _WIN64
-    XSAVE_FORMAT *x=&ctx->FltSave;
-#else
-    XSAVE_FORMAT *x=&ctx->ExtendedRegisters[0];
-#endif
+    XSAVE_FORMAT *x=get_XSAVE_FORMAT(ctx);
     int i;
 
 #ifdef _WIN64
@@ -368,10 +383,11 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bo
     dump_flags(s, ctx->EFlags);
     L_fds (s, "\n");
 
-    if (dump_DRx)
+    if (_dump_DRx)
         dump_DRx(s, ctx);
 
-    dump_FPU_in_XSAVE_FORMAT(s, x);
+    if (_dump_FPU)
+        dump_FPU(s, ctx);
 
     if (sse_supported() && dump_xmm_regs)
     {
@@ -391,11 +407,14 @@ void dump_CONTEXT (fds* s, const CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bo
     };
 };
 
-bool CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2) // ignoring TP/TF flag!
+bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF flag!
 {
     bool rt=true; // so far so good
     DWORD new_eflags1, new_eflags2;
-    XSAVE_FORMAT *t1, *t2;
+
+    XSAVE_FORMAT *t1=get_XSAVE_FORMAT(ctx1);
+    XSAVE_FORMAT *t2=get_XSAVE_FORMAT(ctx2);
+
     unsigned i;
 #ifdef _WIN64
     assert(0);
@@ -457,14 +476,6 @@ bool CONTEXT_compare (fds* s, const CONTEXT * ctx1, const CONTEXT * ctx2) // ign
 
         rt=false;
     };
-
-#ifdef _WIN64
-    t1=(XSAVE_FORMAT*)&ctx1->FltSave;
-    t2=(XSAVE_FORMAT*)&ctx2->FltSave;
-#else
-    t1=(XSAVE_FORMAT*)&ctx1->ExtendedRegisters[0];
-    t2=(XSAVE_FORMAT*)&ctx2->ExtendedRegisters[0];
-#endif
 
     for (i=0; i<16; i++)
     {
@@ -673,11 +684,12 @@ void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx)
     L_fds (s, "\n");
 };
 
-void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *x)
+void dump_FPU (fds* s, CONTEXT *ctx)
 {
     strbuf sb_FCW=STRBUF_INIT;
     strbuf sb_FSW=STRBUF_INIT;
     unsigned r, i;
+    XSAVE_FORMAT *x=get_XSAVE_FORMAT(ctx);
     
     if (x->TagWord==0)
         return;
@@ -692,13 +704,10 @@ void dump_FPU_in_XSAVE_FORMAT (fds* s, XSAVE_FORMAT *x)
     strbuf_deinit(&sb_FSW);
 
     for (r=0; r<8; r++)
-        if (IS_SET (x->TagWord, 1<<(7-r)))
+        if (STx_present_in_tag (ctx, r))
         {
             BYTE *b=(BYTE*)&x->FloatRegisters[r];
-            double a;
-
-            //a=cvt80to64 (b);
-            a=(double)*(long double*)b;
+            double a=get_STx(ctx, r);
 
             if (_isnan (a)==0)
                 L_fds (s, "FPU ST(%d): %lf\n", r, a);
