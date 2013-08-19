@@ -34,3 +34,5 @@ address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem);
 #ifdef  __cplusplus
 }
 #endif
+
+/* vim: set expandtab ts=4 sw=4 : */

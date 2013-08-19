@@ -23,3 +23,5 @@ address TIB_get_stack_top (HANDLE THDL, MemoryCache *mem);
 address TIB_get_stack_bottom (HANDLE THDL, MemoryCache *mem);
 address TIB_get_exceptionlist (HANDLE THDL, MemoryCache *mem);
 bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, MemoryCache *mem);
+
+/* vim: set expandtab ts=4 sw=4 : */

@@ -113,3 +113,5 @@ typedef enum _THREADINFOCLASS {        //        Query    Set        Notes
 #define _NTNATIVE_SELECT_NT(exp) exp
 
 #endif // _MSC_VER
+
+/* vim: set expandtab ts=4 sw=4 : */

@@ -337,6 +337,10 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                     BUF_SIZE=CONTEXT_get_xCX(ctx)*2;
                 else if (d->ins_code==I_REP_MOVSD)
                     BUF_SIZE=CONTEXT_get_xCX(ctx)*4;
+                else
+                {
+                    assert(0);
+                };
 
                 buf=DMALLOC(BYTE, BUF_SIZE, "buf");
 
@@ -833,4 +837,7 @@ const char* Da_emulate_result_to_string(Da_emulate_result r)
     default:
         assert(0);
     };
+    return NULL; // TMCH
 };
+
+/* vim: set expandtab ts=4 sw=4 : */

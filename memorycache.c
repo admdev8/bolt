@@ -17,6 +17,7 @@
 #include "dmalloc.h"
 #include "rbtree.h"
 #include "stuff.h"
+#include "mem_utils.h"
 #include <assert.h>
 
 MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places)
@@ -261,7 +262,7 @@ bool MC_ReadTetrabyte (MemoryCache *mc, address adr, DWORD * out)
     // а если этот DWORD на границе двух страниц...
     if (adr_frac>(PAGE_SIZE-sizeof(DWORD)))
     {
-        BYTE b1, b2, b3, b4;
+        BYTE b1=0, b2=0, b3=0, b4=0; // TMCH
         bool read_OK=true;
         
         if (MC_ReadByte(mc, adr+3, &b1)==false)
@@ -375,9 +376,9 @@ bool MC_WriteOctabyte (MemoryCache *mc, address adr, DWORD64 val)
 bool MC_ReadREG (MemoryCache *mc, address a, REG * out)
 {
 #ifdef _WIN64
-    return MC_ReadOctabyte (mc, a, out);
+    return MC_ReadOctabyte (mc, a, (DWORD64*)out);
 #else
-    return MC_ReadTetrabyte (mc, a, out);
+    return MC_ReadTetrabyte (mc, a, (DWORD*)out);
 #endif
 };
 
@@ -400,8 +401,21 @@ void MC_Flush(MemoryCache *mc)
         if (v->to_be_flushed)
         {
             address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
-            if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==false)
-                die ("%s(): can't flush memory cache. fatal error. exiting\n", __FUNCTION__);
+            if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==FALSE)
+            {
+                MEMORY_BASIC_INFORMATION info;
+                int rt=VirtualQueryEx (mc->PHDL, (LPVOID)adr, &info, sizeof (MEMORY_BASIC_INFORMATION));
+                assert (rt==sizeof(MEMORY_BASIC_INFORMATION));
+                //dump_MEMORY_BASIC_INFORMATION (&info);
+
+                DWORD tmp, tmp2;
+                if (VirtualProtectEx(mc->PHDL, info.BaseAddress, info.RegionSize, PAGE_READWRITE, &tmp)==FALSE)
+                    die ("%s(): first VirtualProtectEx() failed. exiting.\n", __func__);
+                if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==FALSE)
+                    die ("%s(): second try WriteProcessMemory() also failed. exiting.\n", __func__);
+                if (VirtualProtectEx(mc->PHDL, info.BaseAddress, info.RegionSize, tmp, &tmp2)==FALSE)
+                    die ("%s(): second VirtualProtectEx() failed. exiting.\n", __func__);
+            };
             v->to_be_flushed=false;
         };
     };
@@ -578,3 +592,4 @@ bool MC_WriteValue(MemoryCache *mc, address adr, unsigned width, REG val)
     };
 };
 
+/* vim: set expandtab ts=4 sw=4 : */

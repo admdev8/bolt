@@ -96,7 +96,7 @@ bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, MemoryCache *mem)
 };
 
 #if 0
-// not sure if it's works
+// not sure if it works
 DWORD TIB_get_TLS_ptr (HANDLE THDL, MemoryCache *mem)
 {
     BYTE* TEB;
@@ -110,3 +110,5 @@ DWORD TIB_get_TLS_ptr (HANDLE THDL, MemoryCache *mem)
     return rt;
 };
 #endif
+
+/* vim: set expandtab ts=4 sw=4 : */

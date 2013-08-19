@@ -110,3 +110,5 @@ const char *get_DX_register_name();
 #ifdef  __cplusplus
 }
 #endif
+
+/* vim: set expandtab ts=4 sw=4 : */

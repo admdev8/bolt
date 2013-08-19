@@ -187,3 +187,4 @@ address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem)
     return adr+op->u.adr.adr_disp; // negative values of adr_disp must work! (to be checked)
 };
 
+/* vim: set expandtab ts=4 sw=4 : */

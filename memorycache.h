@@ -92,3 +92,5 @@ bool MC_get_any_string (MemoryCache *mem, const address adr, strbuf *out);
 #ifdef  __cplusplus
 }
 #endif
+
+/* vim: set expandtab ts=4 sw=4 : */

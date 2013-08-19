@@ -34,3 +34,5 @@ Da_emulate_result Da_emulate_CMOVcc (Da* d, bool cond, CONTEXT * ctx, MemoryCach
 Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem);
 Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem);
 const char* Da_emulate_result_to_string(Da_emulate_result r);
+
+/* vim: set expandtab ts=4 sw=4 : */

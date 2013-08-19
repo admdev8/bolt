@@ -26,3 +26,5 @@ void X86_register_set_value (X86_register r, CONTEXT *ctx, s_Value *val);
 #ifdef  __cplusplus
 }
 #endif
+
+/* vim: set expandtab ts=4 sw=4 : */

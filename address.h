@@ -22,3 +22,5 @@
 
 // can be wrong for MS-DOS, for example
 //#define A_NO_ADDRESS 0
+
+/* vim: set expandtab ts=4 sw=4 : */
