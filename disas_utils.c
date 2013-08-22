@@ -13,13 +13,15 @@
  *
  */
 
+#include <assert.h>
 #include "disas_utils.h"
 #include "dmalloc.h"
-#include <assert.h>
+#include "oassert.h"
+#include "lisp.h"
 #include "X86_register_helpers.h"
 
 bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, MemoryCache *mem, 
-        const char *fname, unsigned fileline, s_Value *result)
+        const char *fname, unsigned fileline, obj *result)
 {
     bool b;
 
@@ -33,7 +35,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
 
     if (op->type==DA_OP_TYPE_VALUE)
     {
-        copy_Value (result, &op->u.val.v);
+        obj_copy2 (result, &op->u.val._v);
         return true;
     };
 
@@ -49,7 +51,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 b=MC_ReadByte (mem, *rt_adr, &out);
                 if (b)
                 {
-                    create_Value(V_BYTE, (uint8_t)out, result);
+                    obj_byte2((uint8_t)out, result);
                     return true;
                 }
                 else
@@ -61,7 +63,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 b=MC_ReadWyde (mem, *rt_adr, &out);
                 if (b)
                 {
-                    create_Value(V_WORD, (uint16_t)out, result);
+                    obj_wyde2((uint16_t)out, result);
                     return true;
                 }
                 else
@@ -73,7 +75,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 b=MC_ReadTetrabyte (mem, *rt_adr, &out);
                 if (b)
                 {
-                    create_Value(V_DWORD, (uint32_t)out, result);
+                    obj_tetrabyte2((uint32_t)out, result);
                     return true;
                 }
                 else
@@ -85,7 +87,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 b=MC_ReadOctabyte (mem, *rt_adr, &out);
                 if (b)
                 {
-                    create_Value(V_QWORD, (uint64_t)out, result);
+                    obj_octabyte2((uint64_t)out, result);
                     return true;
                 }
                 else
@@ -96,7 +98,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 M128A xmm;
                 if (MC_ReadBuffer (mem, *rt_adr, sizeof (M128A), (BYTE*)&xmm)==false)
                     return false;
-                create_XMM_Value ((uint8_t*)&xmm, result);
+                obj_xmm2 ((uint8_t*)&xmm, result);
                 return true;
             };
         default:
@@ -114,7 +116,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
 	return false;
 };
 
-bool Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache *mem) 
+bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem) 
 {
     address adr;
 
@@ -129,28 +131,28 @@ bool Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache 
 
             if (op->value_width_in_bits==8)
             {
-                if (MC_WriteByte (mem, adr, get_as_8(val))==false)
+                if (MC_WriteByte (mem, adr, obj_get_as_byte(val))==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==16)
             {
-                if (MC_WriteWyde (mem, adr, get_as_16(val))==false)
+                if (MC_WriteWyde (mem, adr, obj_get_as_wyde(val))==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==32)
             {
-                if (MC_WriteTetrabyte (mem, adr, get_as_32(val))==false)
+                if (MC_WriteTetrabyte (mem, adr, obj_get_as_tetrabyte(val))==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==64)
             {
-                if (MC_WriteOctabyte (mem, adr, val->u.v)==false)
+                if (MC_WriteOctabyte (mem, adr, obj_get_as_octabyte(val))==false)
                     goto COPY_FAILED;
             }
             else if (op->value_width_in_bits==128)
             {
                 //val.dump();
-                BYTE * xmm=get_xmm(val);
+                byte * xmm=obj_get_as_xmm(val);
                 //L ("%s(). writing to adr=0x%x\n", __FUNCTION__, adr);
                 //L_print_buf (xmm, 16);
                 if (MC_WriteBuffer (mem, adr, 16, xmm)==false)
@@ -158,14 +160,12 @@ bool Da_op_set_value_of_op (Da_op* op, s_Value *val, CONTEXT * ctx, MemoryCache 
             }
             else
             {
-                assert(0);
+                oassert(!"unsupported value_width_in_bits");
             };
-            return true;
             break;
 
         default:
-            assert(0);
-            return false; // make compiler happy
+            oassert(!"unsupported type");
     };
 COPY_FAILED:
     L ("%s(): Error writing at 0x" PRI_ADR_HEX ". Copy failed.\n", __FUNCTION__, adr);

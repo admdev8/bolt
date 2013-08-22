@@ -16,7 +16,8 @@ X86_DISASM_LIBRARY=$(X86_DISASM)/x86_disasm.a
 PORG=../porg
 PORG_LIBRARY=$(PORG)/$(MSYSTEM)_debug/porg.a
 CPPFLAGS=-D_DEBUG -I$(OCTOTHORPE) -I$(X86_DISASM) -I$(PORG) $(CPPFLAGS_ADD)
-CFLAGS=-c -Wall -g -std=gnu99
+CFLAGS=-c -Wall -g -std=c11
+#CFLAGS=-c -Wall -g -std=gnu99
 SOURCES=CONTEXT_utils.c disas_utils.c memorycache.c X86_register_helpers.c PE.c X86_emu.c \
 	bolt_stuff.c
 DEPFILES=$(SOURCES:.c=.d)
@@ -48,4 +49,4 @@ $(OUTDIR)/%.o: %.c
 # for tests:
 
 %.exe: %.o $(LIBRARY)
-	$(CC) $< $(LIBRARY) $(OCTOTHORPE_LIBRARY) $(OCTOTHORPE_LIBRARY_PATH)/lisp.o $(PORG_LIBRARY) -lpsapi -ldbghelp -limagehlp -o $@
+	$(CC) $< $(LIBRARY) $(OCTOTHORPE_LIBRARY_PATH)/lisp.o $(OCTOTHORPE_LIBRARY) $(PORG_LIBRARY) -lpsapi -ldbghelp -limagehlp -o $@
