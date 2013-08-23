@@ -18,7 +18,7 @@
 #include "rbtree.h"
 #include "stuff.h"
 #include "mem_utils.h"
-#include <assert.h>
+#include "oassert.h"
 
 MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places)
 {
@@ -29,6 +29,19 @@ MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_pl
     rt->dont_read_from_quicksilver_places=dont_read_from_quicksilver_places;
     return rt;
 };
+
+#ifdef _DEBUG
+MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_memory_size)
+{
+    oassert ((testing_memory_size & (PAGE_SIZE-1))==0);
+    MemoryCache* rt=DCALLOC(MemoryCache, 1, "MemoryCache");
+    rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
+    rt->testing=true;
+    rt->testing_memory=testing_memory;
+    rt->testing_memory_size=testing_memory_size;
+    return rt;
+};
+#endif
 
 void MC_MemoryCache_dtor(MemoryCache *mc, bool check_unflushed_elements)
 {
@@ -42,7 +55,7 @@ void MC_MemoryCache_dtor(MemoryCache *mc, bool check_unflushed_elements)
             if (v->to_be_flushed)
             {
                 printf ("%s(): there are still elements to be flushed!\n", __FUNCTION__);
-                assert(0);
+                oassert(0);
             };
         };
     };
@@ -74,7 +87,12 @@ MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
     rt->last_ptr_idx=-1;
     rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
     rbtree_copy (mc->_cache, rt->_cache, key_copier, value_copier);
-    
+   
+#ifdef _DEBUG
+    rt->testing=mc->testing;
+    rt->testing_memory=mc->testing_memory;
+    rt->testing_memory_size=mc->testing_memory_size;
+#endif
     return rt;
 };
 
@@ -103,6 +121,18 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
     rd_adr=idx<<LOG2_PAGE_SIZE;
     t=DCALLOC(MemoryCacheElement, 1, "MemoryCacheElement");
 
+#ifdef _DEBUG
+    if (mc->testing)
+    {
+        oassert (rd_adr+PAGE_SIZE < mc->testing_memory_size);
+        memcpy (t->block, mc->testing_memory+rd_adr, PAGE_SIZE);
+        bytes_read=PAGE_SIZE;
+    };
+#endif
+
+#ifdef _DEBUG    
+    if (mc->testing==false)
+#endif
     if (ReadProcessMemory (mc->PHDL, (LPCVOID)rd_adr, t->block, PAGE_SIZE, &bytes_read)==false)
     {
         DFREE (t);
@@ -110,7 +140,7 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
         return false;
     };
     
-    assert (bytes_read==PAGE_SIZE);
+    oassert (bytes_read==PAGE_SIZE);
     rbtree_insert(mc->_cache, (void*)idx, t);
     return true;
 };
@@ -149,7 +179,7 @@ BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
             if (MC_LoadPageForAddress (mc, adr)==false) // подгружаем блок если у нас его нету
                 return NULL;
             tmp=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
-            assert (tmp!=NULL);
+            oassert (tmp!=NULL);
             mc->last_ptr=tmp->block;
             mc->last_ptr_idx=idx;
             return mc->last_ptr;
@@ -171,7 +201,7 @@ bool MC_ReadByte (MemoryCache *mc, address adr, BYTE * out)
 void MC_mark_as_to_be_flushed(MemoryCache *mc, address idx)
 {
     MemoryCacheElement *m=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
-    assert (m!=NULL);
+    oassert (m!=NULL);
     m->to_be_flushed=true;
 };
 
@@ -401,11 +431,22 @@ void MC_Flush(MemoryCache *mc)
         if (v->to_be_flushed)
         {
             address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
+#ifdef _DEBUG
+            if (mc->testing)
+            {
+                oassert (adr+PAGE_SIZE < mc->testing_memory_size);
+                memcpy (mc->testing_memory+adr, v->block, PAGE_SIZE);
+            };
+#endif       
+ 
+#ifdef _DEBUG
+            if (mc->testing==false)
+#endif            
             if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==FALSE)
             {
                 MEMORY_BASIC_INFORMATION info;
                 int rt=VirtualQueryEx (mc->PHDL, (LPVOID)adr, &info, sizeof (MEMORY_BASIC_INFORMATION));
-                assert (rt==sizeof(MEMORY_BASIC_INFORMATION));
+                oassert (rt==sizeof(MEMORY_BASIC_INFORMATION));
                 //dump_MEMORY_BASIC_INFORMATION (&info);
 
                 DWORD tmp, tmp2;
@@ -448,10 +489,21 @@ bool MC_DryRunFlush(MemoryCache *mc)
             address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
             SIZE_T bytes_read;
 
+#ifdef _DEBUG
+            if (mc->testing)
+            {
+                oassert (adr+PAGE_SIZE < mc->testing_memory_size);
+                memcpy (tmp, mc->testing_memory+adr, PAGE_SIZE);
+            };
+#endif
+
+#ifdef _DEBUG
+            if (mc->testing==false)
+#endif
             if (ReadProcessMemory (mc->PHDL, (LPCVOID)adr, tmp, PAGE_SIZE, &bytes_read)==false)
                 die ("%s(): can't read memory. fatal error. exiting\n", __FUNCTION__);
 
-            assert (bytes_read==PAGE_SIZE);
+            oassert (bytes_read==PAGE_SIZE);
 
             if (memcmp (v->block, tmp, PAGE_SIZE)!=0)
             {
@@ -587,8 +639,7 @@ bool MC_WriteValue(MemoryCache *mc, address adr, unsigned width, REG val)
         case 4: return MC_WriteTetrabyte (mc, adr, val&0xFFFFFFFF);
         case 8: return MC_WriteOctabyte (mc, adr, val);
         default:
-                assert(0);
-                return false; // TMCH
+                oassert(0);
     };
 };
 
