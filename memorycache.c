@@ -24,7 +24,6 @@ MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_pl
 {
     MemoryCache* rt=DCALLOC(MemoryCache, 1, "MemoryCache");
     rt->PHDL=PHDL;
-    rt->last_ptr_idx=-1;
     rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
     rt->dont_read_from_quicksilver_places=dont_read_from_quicksilver_places;
     return rt;
@@ -84,7 +83,6 @@ MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
     rt=DCALLOC(MemoryCache, 1, "MemoryCache"); 
     rt->PHDL=mc->PHDL;
     rt->dont_read_from_quicksilver_places=mc->dont_read_from_quicksilver_places;
-    rt->last_ptr_idx=-1;
     rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
     rbtree_copy (mc->_cache, rt->_cache, key_copier, value_copier);
    
@@ -124,7 +122,7 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 #ifdef _DEBUG
     if (mc->testing)
     {
-        oassert (rd_adr+PAGE_SIZE < mc->testing_memory_size);
+        oassert (rd_adr+PAGE_SIZE <= mc->testing_memory_size);
         memcpy (t->block, mc->testing_memory+rd_adr, PAGE_SIZE);
         bytes_read=PAGE_SIZE;
     };
@@ -169,7 +167,7 @@ BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
 {
     address idx=adr>>LOG2_PAGE_SIZE;
 
-    if (idx==mc->last_ptr_idx)
+    if (mc->last_ptr_idx_present && idx==mc->last_ptr_idx)
         return mc->last_ptr;
     else
     {
@@ -182,6 +180,7 @@ BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
             oassert (tmp!=NULL);
             mc->last_ptr=tmp->block;
             mc->last_ptr_idx=idx;
+            mc->last_ptr_idx_present=true;
             return mc->last_ptr;
         }
         else

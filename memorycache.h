@@ -51,6 +51,7 @@ typedef struct _MemoryCache
     
     BYTE * last_ptr;
     address last_ptr_idx;
+    bool last_ptr_idx_present;
     bool dont_read_from_quicksilver_places;
 #ifdef _DEBUG
     bool testing;
