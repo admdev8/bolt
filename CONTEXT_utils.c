@@ -36,6 +36,11 @@ bool STx_present_in_tag(CONTEXT *ctx, unsigned reg)
     return IS_SET(get_XSAVE_FORMAT(ctx)->TagWord, 1<<(7-reg));
 };
 
+void FPU_set_tag(CONTEXT *ctx, unsigned reg)
+{
+    SET_BIT(get_XSAVE_FORMAT(ctx)->TagWord, 1<<(7-reg));
+};
+
 double get_STx (CONTEXT *ctx, unsigned reg)
 {
     return (double)*(long double*)&get_XSAVE_FORMAT(ctx)->FloatRegisters[reg];
@@ -557,11 +562,7 @@ void CONTEXT_set_reg_STx (CONTEXT * ctx, X86_register r, double v)
         break;
     };
 
-#ifdef _WIN64
-    cvt64to80 (v, (BYTE*)&ctx->FltSave.FloatRegisters[idx]);
-#else
-    cvt64to80 (v, &ctx->FloatSave.RegisterArea[idx*10]);
-#endif
+    *(long double*)&get_XSAVE_FORMAT(ctx)->FloatRegisters[idx]=(long double)v;
 };
 
 void CONTEXT_clear_bp_in_DR7 (CONTEXT * ctx, int bp_n)

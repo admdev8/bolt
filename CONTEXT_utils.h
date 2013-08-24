@@ -38,6 +38,7 @@ extern "C" {
 
 XSAVE_FORMAT* get_XSAVE_FORMAT(CONTEXT *ctx);
 bool STx_present_in_tag(CONTEXT *ctx, unsigned reg);
+void FPU_set_tag(CONTEXT *ctx, unsigned reg);
 double get_STx (CONTEXT *ctx, unsigned reg);
 
 void set_TF (CONTEXT *ctx);
