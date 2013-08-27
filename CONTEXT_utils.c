@@ -13,7 +13,7 @@
  *
  */
 
-#include <assert.h>
+#include "oassert.h"
 #include <math.h>
 
 #include "CONTEXT_utils.h"
@@ -330,7 +330,7 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
 {
     //IF_VERBOSE (2, log_stream() << __FUNCTION__ << " (bp_i=" << bp_i << " a=" << a << ")\n"; );
 
-    assert(bp_i<4);
+    oassert(bp_i<4);
 
     switch (bp_i)
     {
@@ -339,7 +339,7 @@ void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a)
     case 2: ctx->Dr2=a; SET_BIT (ctx->Dr7, FLAG_DR7_L2); break;
     case 3: ctx->Dr3=a; SET_BIT (ctx->Dr7, FLAG_DR7_L3); break;
     default: 
-        assert (0);
+        oassert (0);
         break;
     };
 
@@ -422,7 +422,7 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
 
     unsigned i;
 #ifdef _WIN64
-    assert(0);
+    oassert(!"should be rewritten");
     if (ctx1->Rax!=ctx2->Rax) { L_fds (s, "ctx1->RAX=0x" PRI_REG_HEX_PAD " ctx2->RAX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rax, ctx2->Rax); rt=false; }
     if (ctx1->Rbx!=ctx2->Rbx) { L_fds (s, "ctx1->RBX=0x" PRI_REG_HEX_PAD " ctx2->RBX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rbx, ctx2->Rbx); rt=false; }
     if (ctx1->Rcx!=ctx2->Rcx) { L_fds (s, "ctx1->RCX=0x" PRI_REG_HEX_PAD " ctx2->RCX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rcx, ctx2->Rcx); rt=false; }
@@ -538,7 +538,7 @@ void CONTEXT_set_reg (CONTEXT * ctx, X86_register r, REG v)
     case R_DF: v ? SET_BIT (ctx->EFlags, 1<<10) : REMOVE_BIT (ctx->EFlags, 1<<10); break;
     case R_TF: v ? SET_BIT (ctx->EFlags, 1<<8) : REMOVE_BIT (ctx->EFlags, 1<<8); break;
     default:
-        assert (0);
+        oassert (0);
         break;
     };
 };
@@ -558,7 +558,7 @@ void CONTEXT_set_reg_STx (CONTEXT * ctx, X86_register r, double v)
     case R_ST6: idx=6; break;
     case R_ST7: idx=7; break;
     default:
-        assert (0);
+        oassert (0);
         break;
     };
 
@@ -651,29 +651,28 @@ REG CONTEXT_get_reg (CONTEXT * ctx, X86_register r)
     case R_SS: return ctx->SegSs;
 #endif
     case R_ABSENT:
-        assert(0);
+        oassert(0);
         break;
 
     default:
-        assert (!"register isn't implemented");
+        oassert (!"register isn't implemented");
         break;
     };
-    return 0;
 };
 
 address CONTEXT_calc_adr_of_op (CONTEXT * ctx, Da_op *op)
 {
     REG adr=0;
-    assert (op->type==DA_OP_TYPE_VALUE_IN_MEMORY);
-    assert (op->u.adr.adr_index_mult!=0);
+    oassert (op->type==DA_OP_TYPE_VALUE_IN_MEMORY);
+    oassert (op->adr.adr_index_mult!=0);
 
-    if (op->u.adr.adr_base!=R_ABSENT)
-        adr=adr+CONTEXT_get_reg (ctx, op->u.adr.adr_base);
+    if (op->adr.adr_base!=R_ABSENT)
+        adr=adr+CONTEXT_get_reg (ctx, op->adr.adr_base);
 
-    if (op->u.adr.adr_index!=R_ABSENT)
-        adr=adr+CONTEXT_get_reg (ctx, op->u.adr.adr_index) * op->u.adr.adr_index_mult;
+    if (op->adr.adr_index!=R_ABSENT)
+        adr=adr+CONTEXT_get_reg (ctx, op->adr.adr_index) * op->adr.adr_index_mult;
 
-    return (address)(adr+op->u.adr.adr_disp); // negative values of adr_disp must work! (to be checked)
+    return (address)(adr+op->adr.adr_disp); // negative values of adr_disp must work! (to be checked)
 };
 
 void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx)

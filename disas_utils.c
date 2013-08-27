@@ -26,15 +26,15 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
 
     if (op->type==DA_OP_TYPE_REGISTER)
     {
-        oassert (op->u.reg != R_ABSENT);
+        oassert (op->reg != R_ABSENT);
         // вытянуть из ctx
-        X86_register_get_value (op->u.reg, ctx, result);
+        X86_register_get_value (op->reg, ctx, result);
         return true;
     };
 
     if (op->type==DA_OP_TYPE_VALUE)
     {
-        obj_copy2 (result, &op->u.val._v);
+        obj_copy2 (result, &op->val._v);
         return true;
     };
 
@@ -121,46 +121,44 @@ bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem
     switch (op->type)
     {
         case DA_OP_TYPE_REGISTER:
-            X86_register_set_value (op->u.reg, ctx, val);
+            X86_register_set_value (op->reg, ctx, val);
             return true;
 
         case DA_OP_TYPE_VALUE_IN_MEMORY:
             adr=(address)Da_op_calc_adr_of_op(op, ctx, mem);
 
-            if (op->value_width_in_bits==8)
+            switch (op->value_width_in_bits)
             {
-                if (MC_WriteByte (mem, adr, obj_get_as_byte(val))==false)
-                    goto COPY_FAILED;
-            }
-            else if (op->value_width_in_bits==16)
-            {
-                if (MC_WriteWyde (mem, adr, obj_get_as_wyde(val))==false)
-                    goto COPY_FAILED;
-            }
-            else if (op->value_width_in_bits==32)
-            {
-                if (MC_WriteTetrabyte (mem, adr, obj_get_as_tetrabyte(val))==false)
-                    goto COPY_FAILED;
-            }
-            else if (op->value_width_in_bits==64)
-            {
-                if (MC_WriteOctabyte (mem, adr, obj_get_as_octabyte(val))==false)
-                    goto COPY_FAILED;
-            }
-            else if (op->value_width_in_bits==128)
-            {
-                //val.dump();
-                byte * xmm=obj_get_as_xmm(val);
-                //L ("%s(). writing to adr=0x%x\n", __FUNCTION__, adr);
-                //L_print_buf (xmm, 16);
-                if (MC_WriteBuffer (mem, adr, 16, xmm)==false)
-                    goto COPY_FAILED;
-            }
-            else
-            {
-                oassert(!"unsupported value_width_in_bits");
+                case 8:
+                    if (MC_WriteByte (mem, adr, obj_get_as_byte(val))==false)
+                        goto COPY_FAILED;
+                    return true;
+                case 16:
+                    if (MC_WriteWyde (mem, adr, obj_get_as_wyde(val))==false)
+                        goto COPY_FAILED;
+                    return true;
+                case 32:
+                    if (MC_WriteTetrabyte (mem, adr, obj_get_as_tetrabyte(val))==false)
+                        goto COPY_FAILED;
+                    return true;
+                case 64:
+                    if (MC_WriteOctabyte (mem, adr, obj_get_as_octabyte(val))==false)
+                        goto COPY_FAILED;
+                    return true;
+                case 128:
+                    {
+                        //val.dump();
+                        byte * xmm=obj_get_as_xmm(val);
+                        //L ("%s(). writing to adr=0x%x\n", __FUNCTION__, adr);
+                        //L_print_buf (xmm, 16);
+                        if (MC_WriteBuffer (mem, adr, 16, xmm)==false)
+                            goto COPY_FAILED;
+                        return true;
+                    }
+
+                default:
+                    oassert(!"unsupported value_width_in_bits");
             };
-            break;
 
         default:
             oassert(!"unsupported type");
@@ -174,15 +172,15 @@ address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem)
 {
     address adr=0;
     oassert (op->type==DA_OP_TYPE_VALUE_IN_MEMORY);
-    oassert (op->u.adr.adr_index_mult!=0);
+    oassert (op->adr.adr_index_mult!=0);
 
-    if (op->u.adr.adr_base != R_ABSENT)
-        adr=adr+X86_register_get_value_as_u64 (op->u.adr.adr_base, ctx);
+    if (op->adr.adr_base != R_ABSENT)
+        adr=adr+X86_register_get_value_as_u64 (op->adr.adr_base, ctx);
 
-    if (op->u.adr.adr_index != R_ABSENT)
-        adr=adr+X86_register_get_value_as_u64(op->u.adr.adr_index, ctx) * op->u.adr.adr_index_mult;
+    if (op->adr.adr_index != R_ABSENT)
+        adr=adr+X86_register_get_value_as_u64(op->adr.adr_index, ctx) * op->adr.adr_index_mult;
 
-    return adr+op->u.adr.adr_disp; // negative values of adr_disp must work! (to be checked)
+    return adr+op->adr.adr_disp; // negative values of adr_disp must work! (to be checked)
 };
 
 /* vim: set expandtab ts=4 sw=4 : */

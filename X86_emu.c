@@ -13,8 +13,7 @@
  *
  */
 
-#include <assert.h>
-
+#include "oassert.h"
 #include "dmalloc.h"
 #include "lisp.h"
 #include "x86.h"
@@ -22,7 +21,6 @@
 #include "x86_emu.h"
 #include "bitfields.h"
 #include "disas_utils.h"
-#include "oassert.h"
 
 bool x86_emu_debug=/*true*/ false;
 
@@ -136,7 +134,7 @@ Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem)
 
     //L (2, __FUNCTION__ "() begin\n");
 
-    b=Da_op_get_value_of_op(d->_op[1], &rt_adr, ctx, mem, __FILE__, __LINE__, &tmp);
+    b=Da_op_get_value_of_op(&d->op[1], &rt_adr, ctx, mem, __FILE__, __LINE__, &tmp);
     if (b==false)
     {
         /*
@@ -151,7 +149,7 @@ Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem)
         return DA_EMULATED_CANNOT_READ_MEMORY;
     };
 
-    b=Da_op_set_value_of_op (d->_op[0], &tmp, ctx, mem);
+    b=Da_op_set_value_of_op (&d->op[0], &tmp, ctx, mem);
 
     if (b==false)
     {
@@ -166,7 +164,7 @@ Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem)
         */
         return DA_EMULATED_CANNOT_WRITE_MEMORY;
     };
-    CONTEXT_add_to_PC(ctx, d->len);
+    CONTEXT_add_to_PC(ctx, d->ins_len);
     //IF_VERBOSE (2, cout << __FUNCTION__ << "() succ end. new PC: 0x" << hex << CONTEXT_get_PC(ctx) << endl; );
     return DA_EMULATED_OK;
 };
@@ -174,9 +172,9 @@ Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem)
 Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx)
 {
     if (cond)
-        CONTEXT_set_PC(ctx, obj_get_as_REG(&d->_op[0]->u.val._v));
+        CONTEXT_set_PC(ctx, obj_get_as_REG(&d->op[0].val._v));
     else
-        CONTEXT_add_to_PC(ctx, d->len);
+        CONTEXT_add_to_PC(ctx, d->ins_len);
     return DA_EMULATED_OK;
 };
 
@@ -186,7 +184,7 @@ Da_emulate_result Da_emulate_CMOVcc (Da* d, bool cond, CONTEXT * ctx, MemoryCach
         return Da_emulate_MOV_op1_op2(d, ctx, mem);
     else
     {
-        CONTEXT_add_to_PC(ctx, d->len);
+        CONTEXT_add_to_PC(ctx, d->ins_len);
         return DA_EMULATED_OK;
     };
 };
@@ -197,11 +195,11 @@ Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache
 
     obj_byte2 (cond ? 1 : 0, &dst);
 
-    bool b=Da_op_set_value_of_op (d->_op[0], &dst, ctx, mem);
+    bool b=Da_op_set_value_of_op (&d->op[0], &dst, ctx, mem);
     if (b==false)
         return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
-    CONTEXT_add_to_PC(ctx, d->len);
+    CONTEXT_add_to_PC(ctx, d->ins_len);
     return DA_EMULATED_OK;
 };
 
@@ -242,7 +240,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
             {
                 address rt_adr;
                 obj v;
-                b=Da_op_get_value_of_op (d->_op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &v);
+                b=Da_op_get_value_of_op (&d->op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &v);
                 if (b==false)
                 {
                     if (x86_emu_debug)
@@ -267,7 +265,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 obj v;
                 obj_tetrabyte2 (val, &v);
-                Da_op_set_value_of_op (d->_op[0], &v, ctx, mem);
+                Da_op_set_value_of_op (&d->op[0], &v, ctx, mem);
                 goto add_to_PC_and_return_OK;
             };
             break;
@@ -320,7 +318,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                 } 
                 else
                 {
-                    assert(0);
+                    oassert(0);
                 };
 
                 if (MC_WriteBuffer (mem, CONTEXT_get_xDI (ctx), BUF_SIZE, buf)==false)
@@ -351,7 +349,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                     BUF_SIZE=CONTEXT_get_xCX(ctx)*4;
                 else
                 {
-                    assert(0);
+                    oassert(0);
                 };
 
                 buf=DMALLOC(BYTE, BUF_SIZE, "buf");
@@ -386,10 +384,10 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
         case I_RETN:
             {
                 WORD ret_arg=0;
-                if (d->_op[0]!=NULL)
+                if (d->ops_total==1)
                 {
-                    assert (d->_op[0]->type==DA_OP_TYPE_VALUE);
-                    ret_arg=obj_get_as_wyde(&d->_op[0]->u.val._v); // RETN arg is 16-bit
+                    oassert (d->op[0].type==DA_OP_TYPE_VALUE);
+                    ret_arg=obj_get_as_wyde(&d->op[0].val._v); // RETN arg is 16-bit
                 };
 
                 address newPC;
@@ -408,13 +406,13 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
 
                 obj rt1, rt2;
                 REG rt1_adr, rt2_adr;
-                b=Da_op_get_value_of_op (d->_op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1);
+                b=Da_op_get_value_of_op (&d->op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 if (d->ins_code==I_ADD)
                 {
-                    assert (d->_op[0]->value_width_in_bits==d->_op[1]->value_width_in_bits);
-                    b=Da_op_get_value_of_op (d->_op[1], &rt2_adr, ctx, mem, __FILE__, __LINE__, &rt2);
+                    oassert (d->op[0].value_width_in_bits==d->op[1].value_width_in_bits);
+                    b=Da_op_get_value_of_op (&d->op[1], &rt2_adr, ctx, mem, __FILE__, __LINE__, &rt2);
                     if (b==false)
                         return DA_EMULATED_CANNOT_READ_MEMORY;
                 }
@@ -435,13 +433,13 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                     set_or_clear_flag (ctx, FLAG_CF, obj_compare (&res_sum, &rt1)==-1); // res_sum < rt1
 
                 octabyte tmp=((zero_extend_to_REG(&rt1) ^ zero_extend_to_REG(&rt2) ^ 
-                            get_sign_bit (d->_op[0]->value_width_in_bits)) & 
+                            get_sign_bit (d->op[0].value_width_in_bits)) & 
                         (zero_extend_to_REG(&res_sum) ^ zero_extend_to_REG(&rt1))) 
                     & 
-                    get_sign_bit (d->_op[0]->value_width_in_bits);
+                    get_sign_bit (d->op[0].value_width_in_bits);
                 set_or_clear_flag (ctx, FLAG_OF, tmp);
 
-                b=Da_op_set_value_of_op (d->_op[0], &res_sum, ctx, mem);
+                b=Da_op_set_value_of_op (&d->op[0], &res_sum, ctx, mem);
                 if (b==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
                 goto add_to_PC_and_return_OK;
@@ -453,13 +451,13 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
         case I_AND:
         case I_TEST:
             {
-                assert (d->_op[0]->value_width_in_bits==d->_op[1]->value_width_in_bits);
+                oassert (d->op[0].value_width_in_bits==d->op[1].value_width_in_bits);
                 obj rt1, rt2, res;
                 REG rt1_adr, rt2_adr;
-                b=Da_op_get_value_of_op (d->_op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1);
+                b=Da_op_get_value_of_op (&d->op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
-                b=Da_op_get_value_of_op (d->_op[1], &rt2_adr, ctx, mem, __FILE__, __LINE__, &rt2);
+                b=Da_op_get_value_of_op (&d->op[1], &rt2_adr, ctx, mem, __FILE__, __LINE__, &rt2);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
 
@@ -475,7 +473,9 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                     case I_AND: 
                         obj_AND(&rt1, &rt2, &res); 
                         break;
-                    default: assert(0); break;
+                    default: 
+                        oassert(0);
+                        break;
                 };
 
                 set_PF (ctx, &res);
@@ -488,7 +488,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                 if (d->ins_code==I_TEST)
                     b=true;
                 else
-                    b=Da_op_set_value_of_op (d->_op[0], &res, ctx, mem);
+                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem);
 
                 if (b)
                     goto add_to_PC_and_return_OK;
@@ -504,11 +504,11 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
             {
                 if (d->ins_code==I_SUB || d->ins_code==I_SBB || d->ins_code==I_CMP)
                 {
-                    assert (d->_op[0]->value_width_in_bits==d->_op[1]->value_width_in_bits);
+                    oassert (d->op[0].value_width_in_bits==d->op[1].value_width_in_bits);
                 };
                 obj rt1, rt2;
                 REG rt1_adr, rt2_adr;
-                b=Da_op_get_value_of_op (d->_op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1);
+                b=Da_op_get_value_of_op (&d->op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1);
                 if (b==false) 
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 if (d->ins_code==I_DEC)
@@ -518,7 +518,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                 }
                 else
                 {
-                    b=Da_op_get_value_of_op (d->_op[1], &rt2_adr, ctx, mem, __FILE__, __LINE__, &rt2);
+                    b=Da_op_get_value_of_op (&d->op[1], &rt2_adr, ctx, mem, __FILE__, __LINE__, &rt2);
                     if (b==false)
                         return DA_EMULATED_CANNOT_READ_MEMORY;
                 };
@@ -546,13 +546,13 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
 
                 octabyte tmp=((zero_extend_to_octabyte(&rt1) ^ zero_extend_to_octabyte(&rt2)) & 
                         (zero_extend_to_octabyte(&res) ^ zero_extend_to_octabyte(&rt1))) &
-                    get_sign_bit (d->_op[0]->value_width_in_bits);
+                    get_sign_bit (d->op[0].value_width_in_bits);
                 set_or_clear_flag (ctx, FLAG_OF, tmp);
 
                 if (d->ins_code==I_CMP)
                     b=true;
                 else
-                    b=Da_op_set_value_of_op (d->_op[0], &res, ctx, mem);
+                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem);
 
                 if (b)
                     goto add_to_PC_and_return_OK;
@@ -566,19 +566,19 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                 REG op1_adr, op2_adr;
 
                 obj op1;
-                b=Da_op_get_value_of_op(d->_op[0], &op1_adr, ctx, mem, __FILE__, __LINE__, &op1);
+                b=Da_op_get_value_of_op(&d->op[0], &op1_adr, ctx, mem, __FILE__, __LINE__, &op1);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
 
                 obj op2;
-                b=Da_op_get_value_of_op(d->_op[1], &op2_adr, ctx, mem, __FILE__, __LINE__, &op2);
+                b=Da_op_get_value_of_op(&d->op[1], &op2_adr, ctx, mem, __FILE__, __LINE__, &op2);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
 
-                if (Da_op_set_value_of_op (d->_op[0], &op2, ctx, mem)==false)
+                if (Da_op_set_value_of_op (&d->op[0], &op2, ctx, mem)==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
-                if (Da_op_set_value_of_op (d->_op[1], &op1, ctx, mem)==false)
+                if (Da_op_set_value_of_op (&d->op[1], &op1, ctx, mem)==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
                 goto add_to_PC_and_return_OK;
@@ -595,7 +595,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
             {
                 address rt_adr;
                 obj op2;
-                bool b=Da_op_get_value_of_op(d->_op[1], &rt_adr, ctx, mem, __FILE__, __LINE__, &op2);
+                bool b=Da_op_get_value_of_op(&d->op[1], &rt_adr, ctx, mem, __FILE__, __LINE__, &op2);
                 if (b==false)
                 {
                     /*
@@ -613,20 +613,20 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
 
                 if (d->ins_code==I_MOVZX)
                 {
-                    enum obj_type op1_type_will_be=bit_width_to_obj_type (d->_op[0]->value_width_in_bits);
+                    enum obj_type op1_type_will_be=bit_width_to_obj_type (d->op[0].value_width_in_bits);
                     obj_zero_extend (&op2, op1_type_will_be, &to_be_stored_v);
                 }
                 else if (d->ins_code==I_MOVSX)
                 {
-                    enum obj_type op1_type_will_be=bit_width_to_obj_type (d->_op[0]->value_width_in_bits);
+                    enum obj_type op1_type_will_be=bit_width_to_obj_type (d->op[0].value_width_in_bits);
                     obj_sign_extend (&op2, op1_type_will_be, &to_be_stored_v);
                 }
                 else
                 {
-                    assert (0);
+                    oassert (0);
                 };
 
-                b=Da_op_set_value_of_op (d->_op[0], &to_be_stored_v, ctx, mem);
+                b=Da_op_set_value_of_op (&d->op[0], &to_be_stored_v, ctx, mem);
 
                 if (b==false)
                 {
@@ -648,10 +648,10 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
 
         case I_LEA:
             {
-                address a=(address)Da_op_calc_adr_of_op(d->_op[1], ctx, mem);
+                address a=(address)Da_op_calc_adr_of_op(&d->op[1], ctx, mem);
                 obj val;
                 obj_tetrabyte2(a, &val);
-                b=Da_op_set_value_of_op (d->_op[0], &val, ctx, mem);
+                b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem);
                 if (b==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
                 goto add_to_PC_and_return_OK;
@@ -666,13 +666,13 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                 REG op1_adr, op2_adr;
 
                 obj op1;
-                bool b=Da_op_get_value_of_op(d->_op[0], &op1_adr, ctx, mem, __FILE__, __LINE__, &op1);
+                bool b=Da_op_get_value_of_op(&d->op[0], &op1_adr, ctx, mem, __FILE__, __LINE__, &op1);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
 
                 // should be read anyway!
                 obj op2;
-                b=Da_op_get_value_of_op(d->_op[1], &op2_adr, ctx, mem, __FILE__, __LINE__, &op2);
+                b=Da_op_get_value_of_op(&d->op[1], &op2_adr, ctx, mem, __FILE__, __LINE__, &op2);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
 #ifdef _WIN64 
@@ -704,7 +704,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                         obj_REG2_and_set_type(op1.t, new_v, &new_op1);
                     };
 
-                    if (Da_op_set_value_of_op (d->_op[0], &new_op1, ctx, mem)==false)
+                    if (Da_op_set_value_of_op (&d->op[0], &new_op1, ctx, mem)==false)
                         return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
                     set_PF (ctx, &new_op1);
@@ -808,7 +808,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
             {
                 address rt_adr;
                 obj rt;
-                bool b=Da_op_get_value_of_op(d->_op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &rt);
+                bool b=Da_op_get_value_of_op(&d->op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &rt);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 CONTEXT_set_PC(ctx, obj_get_as_REG(&rt));
@@ -819,10 +819,10 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
             {
                 address rt_adr;
                 obj rt;
-                bool b=Da_op_get_value_of_op(d->_op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &rt);
+                bool b=Da_op_get_value_of_op(&d->op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &rt);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
-                if (DO_PUSH(ctx, mem, CONTEXT_get_PC(ctx)+d->len)==false)
+                if (DO_PUSH(ctx, mem, CONTEXT_get_PC(ctx)+d->ins_len)==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
                 CONTEXT_set_PC(ctx, obj_get_as_REG(&rt));
                 return DA_EMULATED_OK;
@@ -839,7 +839,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
     };
 
 add_to_PC_and_return_OK:    
-    CONTEXT_add_to_PC(ctx, d->len);
+    CONTEXT_add_to_PC(ctx, d->ins_len);
     return DA_EMULATED_OK;
 };
 

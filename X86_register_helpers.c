@@ -214,7 +214,7 @@ uint64_t X86_register_get_value_as_u64 (X86_register r, const CONTEXT *ctx)
 
     obj val;
     X86_register_get_value (r, ctx, &val);
-    rt=obj_get_as_octabyte (&val);
+    rt=zero_extend_to_octabyte (&val);
     return rt;
 };
 
