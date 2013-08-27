@@ -26,9 +26,6 @@
 
 // Rationale: x86 emu testing mode should be supported (DryRunFlush())
 
-// TODO: здесь может быть также такой режим, когда все ф-ции будут работать, но на прямую, без кеша
-// т.н. cache bypass
-
 // change both if need
 #define PAGE_SIZE 4096
 #define LOG2_PAGE_SIZE 12

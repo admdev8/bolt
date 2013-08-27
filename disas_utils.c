@@ -13,10 +13,9 @@
  *
  */
 
-#include <assert.h>
+#include "oassert.h"
 #include "disas_utils.h"
 #include "dmalloc.h"
-#include "oassert.h"
 #include "lisp.h"
 #include "X86_register_helpers.h"
 
@@ -27,7 +26,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
 
     if (op->type==DA_OP_TYPE_REGISTER)
     {
-        assert (op->u.reg != R_ABSENT);
+        oassert (op->u.reg != R_ABSENT);
         // вытянуть из ctx
         X86_register_get_value (op->u.reg, ctx, result);
         return true;
@@ -102,18 +101,17 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 return true;
             };
         default:
-            assert(!"unknown value_width_in_bits");
+            oassert(!"unknown value_width_in_bits");
             break;
         };
 
-        assert(0);
+        oassert(0);
     };
 
 #if 0
 	L ("%s(): type=%d!\n", __FUNCTION__, type);
 #endif
-	assert(0); // should not be here
-	return false;
+	oassert(0); // should not be here
 };
 
 bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem) 
@@ -175,8 +173,8 @@ COPY_FAILED:
 address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem)
 {
     address adr=0;
-    assert (op->type==DA_OP_TYPE_VALUE_IN_MEMORY);
-    assert (op->u.adr.adr_index_mult!=0);
+    oassert (op->type==DA_OP_TYPE_VALUE_IN_MEMORY);
+    oassert (op->u.adr.adr_index_mult!=0);
 
     if (op->u.adr.adr_base != R_ABSENT)
         adr=adr+X86_register_get_value_as_u64 (op->u.adr.adr_base, ctx);

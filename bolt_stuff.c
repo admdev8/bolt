@@ -95,20 +95,4 @@ bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, MemoryCache *mem)
     return p<=TIB_get_stack_top (THDL, mem) && p>=TIB_get_stack_bottom (THDL, mem);
 };
 
-#if 0
-// not sure if it works
-DWORD TIB_get_TLS_ptr (HANDLE THDL, MemoryCache *mem)
-{
-    BYTE* TEB;
-
-    TEB=(BYTE*)get_TIB ();
-    assert (TEB!=NULL);
-
-    DWORD rt;
-    bool b=MC_ReadTetrabyte (mem, (REG)(TEB+0x2C), &rt);
-    assert (b);
-    return rt;
-};
-#endif
-
 /* vim: set expandtab ts=4 sw=4 : */
