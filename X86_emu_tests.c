@@ -75,4 +75,35 @@ void Da_emulate_tests()
 			oassert((ctx.EFlags & FLAG_PSAZOC)==(intrin_result_flags & FLAG_PSAZOC));
 		};
 	};
+
+	// MOVSX
+	{
+		ctx.Eax=1;
+		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_EAX_AL, ctx.Eip, &da);
+		oassert(b);
+		r=Da_emulate(&da, &ctx, mc);
+		oassert(r==DA_EMULATED_OK);
+		oassert(ctx.Eax==1);
+		
+		ctx.Eax=0x80;
+		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_AX_AL, ctx.Eip, &da);
+		oassert(b);
+		r=Da_emulate(&da, &ctx, mc);
+		oassert(r==DA_EMULATED_OK);
+		oassert(ctx.Eax==0xFF80);
+		
+		ctx.Eax=0x80;
+		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_EAX_AL, ctx.Eip, &da);
+		oassert(b);
+		r=Da_emulate(&da, &ctx, mc);
+		oassert(r==DA_EMULATED_OK);
+		oassert(ctx.Eax==0xFFFFFF80);
+		
+		ctx.Eax=0x8123;
+		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_EAX_AX, ctx.Eip, &da);
+		oassert(b);
+		r=Da_emulate(&da, &ctx, mc);
+		oassert(r==DA_EMULATED_OK);
+		oassert(ctx.Eax==0xFFFF8123);
+	};
 };
