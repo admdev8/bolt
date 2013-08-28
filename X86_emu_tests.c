@@ -5,25 +5,86 @@
 #include "x86_disas.h"
 #include "oassert.h"
 #include "rand.h"
+#include "stuff.h"
 
-void SHL (tetrabyte _shifted_value, uint8_t shift_value, tetrabyte* out_result, tetrabyte* out_flags)
+void SHL (IN tetrabyte value, IN uint8_t shift_value, OUT tetrabyte* result, IN OUT tetrabyte* flags)
 {
-	tetrabyte flags;
-	// ~FLAG_PSAZOC
+	tetrabyte tmp;
+	
 	__asm__("pushfl;"
 		"popl %%ebx;"
-		"andl $0xfffff72a, %%ebx;" 		
+		"andl $0xfffff72a, %%ebx;" // ~FLAG_PSAZOC
 		"orl %%edx, %%ebx;"
 		"pushl %%ebx;"
 		"popfl;"
 		"shll %%cl, %%eax;"
 		"pushfl;"
 		"popl %%edx;"
-				: "=a" (*out_result), "=d" (flags)
-				: "a" (_shifted_value), "c" (shift_value), "d" (*out_flags)
+				: "=a" (*result), "=d" (tmp)
+				: "a" (value), "c" (shift_value), "d" (*flags)
 				: "%ebx", "cc"
 		);
-	*out_flags=(flags & FLAG_PSAZOC);
+	*flags=(tmp & FLAG_PSAZOC);
+};
+
+void SHR (IN tetrabyte value, IN uint8_t shift_value, OUT tetrabyte* result, IN OUT tetrabyte* flags)
+{
+	tetrabyte tmp;
+	
+	__asm__("pushfl;"
+		"popl %%ebx;"
+		"andl $0xfffff72a, %%ebx;" // ~FLAG_PSAZOC
+		"orl %%edx, %%ebx;"
+		"pushl %%ebx;"
+		"popfl;"
+		"shrl %%cl, %%eax;"
+		"pushfl;"
+		"popl %%edx;"
+				: "=a" (*result), "=d" (tmp)
+				: "a" (value), "c" (shift_value), "d" (*flags)
+				: "%ebx", "cc"
+		);
+	*flags=(tmp & FLAG_PSAZOC);
+};
+
+void SAR (IN tetrabyte value, IN uint8_t shift_value, OUT tetrabyte* result, IN OUT tetrabyte* flags)
+{
+	tetrabyte tmp;
+	
+	__asm__("pushfl;"
+		"popl %%ebx;"
+		"andl $0xfffff72a, %%ebx;" // ~FLAG_PSAZOC
+		"orl %%edx, %%ebx;"
+		"pushl %%ebx;"
+		"popfl;"
+		"sarl %%cl, %%eax;"
+		"pushfl;"
+		"popl %%edx;"
+				: "=a" (*result), "=d" (tmp)
+				: "a" (value), "c" (shift_value), "d" (*flags)
+				: "%ebx", "cc"
+		);
+	*flags=(tmp & FLAG_PSAZOC);
+};
+
+void ADD (IN tetrabyte op1, IN tetrabyte op2, OUT tetrabyte* result, IN OUT tetrabyte* flags)
+{
+	tetrabyte tmp;
+	
+	__asm__("pushfl;"
+		"popl %%ebx;"
+		"andl $0xfffff72a, %%ebx;" // ~FLAG_PSAZOC
+		"orl %%edx, %%ebx;"
+		"pushl %%ebx;"
+		"popfl;"
+		"addl %%ecx, %%eax;"
+		"pushfl;"
+		"popl %%edx;"
+				: "=a" (*result), "=d" (tmp)
+				: "a" (op1), "c" (op2), "d" (*flags)
+				: "%ebx", "cc"
+		);
+	*flags=(tmp & FLAG_PSAZOC);
 };
 
 void Da_emulate_tests()
@@ -39,10 +100,14 @@ void Da_emulate_tests()
 
 	sgenrand(GetTickCount());
 
+	// SHL, SHR, SAR
 	for (unsigned i=0; i<1000; i++)
 		for (byte CL=0; CL<0x20; CL++)
 		{
 			tetrabyte val=genrand();
+			REG result;
+
+			// SHL
 			ctx.Esi=0;
 			ctx.Ecx=CL;
 			ctx.EFlags=0;
@@ -51,12 +116,43 @@ void Da_emulate_tests()
 			oassert(b);
 			r=Da_emulate(&da, &ctx, mc);
 			oassert(r==DA_EMULATED_OK);
-			REG result;
 			b=MC_ReadREG(mc, 0, &result);	
 			oassert(b);
 			tetrabyte SHL_result, SHL_flags=0;
 			SHL (val, CL, &SHL_result, &SHL_flags);
 			oassert(SHL_result==result);
 			oassert((ctx.EFlags & FLAG_PSAZOC)==SHL_flags);
+
+			// SHR
+			ctx.Esi=0;
+			ctx.Ecx=CL;
+			ctx.EFlags=0;
+			MC_WriteREG(mc, 0, val);
+			b=Da_Da(Fuzzy_False, (BYTE*)X86_SHR_OP_ESI_CP_CL, ctx.Eip, &da);
+			oassert(b);
+			r=Da_emulate(&da, &ctx, mc);
+			oassert(r==DA_EMULATED_OK);
+			b=MC_ReadREG(mc, 0, &result);	
+			oassert(b);
+			tetrabyte SHR_result, SHR_flags=0;
+			SHR (val, CL, &SHR_result, &SHR_flags);
+			oassert(SHR_result==result);
+			oassert((ctx.EFlags & FLAG_PSAZOC)==SHR_flags);
+			
+			// SAR
+			ctx.Esi=0;
+			ctx.Ecx=CL;
+			ctx.EFlags=0;
+			MC_WriteREG(mc, 0, val);
+			b=Da_Da(Fuzzy_False, (BYTE*)X86_SAR_OP_ESI_CP_CL, ctx.Eip, &da);
+			oassert(b);
+			r=Da_emulate(&da, &ctx, mc);
+			oassert(r==DA_EMULATED_OK);
+			b=MC_ReadREG(mc, 0, &result);	
+			oassert(b);
+			tetrabyte SAR_result, SAR_flags=0;
+			SAR (val, CL, &SAR_result, &SAR_flags);
+			oassert(SAR_result==result);
+			oassert((ctx.EFlags & FLAG_PSAZOC)==SAR_flags);
 		};
 };
