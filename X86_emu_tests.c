@@ -68,12 +68,30 @@ void Da_emulate_tests()
 			oassert(b);
 			r=Da_emulate(&da, &ctx, mc);
 			oassert(r==DA_EMULATED_OK);
-			tetrabyte intrin_result, intrin_result_flags=0;
-			intrin_result_flags=flags;
+			tetrabyte intrin_result, intrin_result_flags=flags;
 			intrin_funcs[f] (op1, op2, &intrin_result, &intrin_result_flags);
 			oassert(ctx.Eax==intrin_result);
 			oassert((ctx.EFlags & FLAG_PSAZOC)==(intrin_result_flags & FLAG_PSAZOC));
 		};
+	};
+	
+	for (unsigned i=0; i<10; i++)
+	{
+		tetrabyte op1=genrand(), op2=genrand(), flags=genrand() & FLAG_PSAZOC;
+
+		ctx.Eax=op1;
+		ctx.Ebx=op2;
+		ctx.EFlags=flags;
+		b=Da_Da(Fuzzy_False, (BYTE*)X86_XOR_EAX_EBX, ctx.Eip, &da);
+		oassert(b);
+		r=Da_emulate(&da, &ctx, mc);
+		oassert(r==DA_EMULATED_OK);
+		tetrabyte intrin_result, intrin_result_flags=flags;
+		intrin_XOR_addr (&op1, op2, &intrin_result, &intrin_result_flags);
+		oassert(ctx.Eax==op1);
+		oassert((ctx.EFlags & FLAG_PSAZOC)==(intrin_result_flags & FLAG_PSAZOC));
+		//dump_CONTEXT (&cur_fds, &ctx, false, false, false);
+		//printf ("intrin_result_flags="); dump_flags (&cur_fds, intrin_result_flags); printf ("\n");
 	};
 
 	// MOVSX

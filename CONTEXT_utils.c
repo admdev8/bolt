@@ -471,11 +471,11 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
     new_eflags2=ctx2->EFlags&(~FLAG_TF)&(~FLAG_RSRV1)&(~FLAG_RF);
     if (new_eflags1 != new_eflags2) 
     { 
-        L_fds (s, "ctx1->EFLAGS (new_eflags1)=0x%x (");
+        L_fds (s, "ctx1->EFLAGS (new_eflags1)=0x%x (", new_eflags1);
         dump_flags(s, new_eflags1);
         L_fds (s, ")\n");
 
-        L_fds (s, "ctx2->EFLAGS (new_eflags2)=0x%x (");
+        L_fds (s, "ctx2->EFLAGS (new_eflags2)=0x%x (", new_eflags2);
         dump_flags(s, new_eflags2);
         L_fds (s, ")\n");
 

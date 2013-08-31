@@ -128,9 +128,11 @@ bool DO_POP (CONTEXT * ctx, MemoryCache *mem, REG *outval)
 
 Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem)
 {
-    obj tmp;
+    obj tmp; // we can't allocate it dynamically, it's high performance code after all!
+    tmp.t=OBJ_NONE;
     address rt_adr;
     bool b;
+    Da_emulate_result r;
 
     //L (2, __FUNCTION__ "() begin\n");
 
@@ -146,7 +148,8 @@ Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem)
         printf ("]: can't read src (2nd) operand\n");
         };
         */
-        return DA_EMULATED_CANNOT_READ_MEMORY;
+        r=DA_EMULATED_CANNOT_READ_MEMORY;
+        goto exit;
     };
 
     b=Da_op_set_value_of_op (&d->op[0], &tmp, ctx, mem);
@@ -162,11 +165,15 @@ Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem)
         printf ("]: can't write dst (1nd) operand\n");
         };
         */
-        return DA_EMULATED_CANNOT_WRITE_MEMORY;
+        r=DA_EMULATED_CANNOT_WRITE_MEMORY;
+        goto exit;
     };
     CONTEXT_add_to_PC(ctx, d->ins_len);
     //IF_VERBOSE (2, cout << __FUNCTION__ << "() succ end. new PC: 0x" << hex << CONTEXT_get_PC(ctx) << endl; );
-    return DA_EMULATED_OK;
+    r=DA_EMULATED_OK;
+exit:    
+    obj_free_structures(&tmp);
+    return r;
 };
 
 Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx)

@@ -473,7 +473,7 @@ void MC_dump_state(fds *s, MemoryCache *mc)
     };
 };
 
-bool MC_DryRunFlush(MemoryCache *mc)
+bool MC_CompareInternalStateWithMemory(MemoryCache *mc)
 {
     BYTE* tmp=DMALLOC(BYTE, PAGE_SIZE, "tmp");
     bool rt=true;
