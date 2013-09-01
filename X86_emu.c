@@ -210,6 +210,22 @@ Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache
     return DA_EMULATED_OK;
 };
 
+bool ins_traced_by_one_step(Ins_codes i)
+{
+    switch (i)
+    {
+        case I_REP_STOSB:
+        case I_REP_STOSW:
+        case I_REP_STOSD:
+        case I_REP_MOVSB:
+        case I_REP_MOVSW:
+        case I_REP_MOVSD:
+            return true;
+        default:
+            return false;
+    };
+};
+
 Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
 {
     //bool SF=IS_SET(ctx->EFlags, FLAG_SF);

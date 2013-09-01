@@ -28,6 +28,7 @@ typedef enum _Da_emulate_result
     DA_EMULATED_NOT_SUPPORTED
 } Da_emulate_result;
 
+bool ins_traced_by_one_step(Ins_codes i);
 Da_emulate_result Da_emulate_MOV_op1_op2(Da *d, CONTEXT * ctx, MemoryCache *mem);
 Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx);
 Da_emulate_result Da_emulate_CMOVcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem);
