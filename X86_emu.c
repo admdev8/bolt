@@ -312,6 +312,9 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
         case I_REP_STOSD:
             {
                 BYTE *buf;
+                bool DF=IS_SET(ctx->EFlags, FLAG_DF);
+                if (DF)
+                    return DA_NOT_EMULATED; // not supported... bug here
 
                 SIZE_T BUF_SIZE;
 
@@ -357,42 +360,70 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
         case I_REP_MOVSW:
         case I_REP_MOVSD:
             {
-                // FIXME: that instructions should be tested in emu tested!
-                // FIXME: а было бы хорошо чтобы тестилось, ибо еще надо добавить REPE SCASx и тестить
-
                 BYTE *buf;
+                bool DF=IS_SET(ctx->EFlags, FLAG_DF);
+                if (DF)
+                    return DA_NOT_EMULATED; // not supported... bug here
 
                 SIZE_T BUF_SIZE;
+                SIZE_T sizeof_element;
 
                 if (d->ins_code==I_REP_MOVSB)
-                    BUF_SIZE=CONTEXT_get_xCX(ctx);
+                    sizeof_element=1;
                 else if (d->ins_code==I_REP_MOVSW)
-                    BUF_SIZE=CONTEXT_get_xCX(ctx)*2;
+                    sizeof_element=2;
                 else if (d->ins_code==I_REP_MOVSD)
-                    BUF_SIZE=CONTEXT_get_xCX(ctx)*4;
+                    sizeof_element=4;
                 else
                 {
                     oassert(0);
                 };
+                    
+                BUF_SIZE=CONTEXT_get_xCX(ctx)*sizeof_element;
 
+                //printf ("%s() BUF_SIZE=0x%x\n", __func__, BUF_SIZE);
+                //printf ("%s() (before) SI=0x" PRI_REG_HEX "\n", __func__, CONTEXT_get_xSI(ctx));
+                //printf ("%s() (before) DI=0x" PRI_REG_HEX "\n", __func__, CONTEXT_get_xDI(ctx));
+                
                 buf=DMALLOC(BYTE, BUF_SIZE, "buf");
 
-                if (MC_ReadBuffer (mem, CONTEXT_get_xSI(ctx), BUF_SIZE, buf)==false)
+                address blk_src=CONTEXT_get_xSI(ctx);
+                address blk_dst=CONTEXT_get_xDI(ctx);
+
+                if (DF)
+                {
+                    blk_src-=BUF_SIZE; // +sizeof_element;
+                    blk_dst-=BUF_SIZE; // +sizeof_element;
+                };
+
+                if (MC_ReadBuffer (mem, blk_src, BUF_SIZE, buf)==false)
                 {
                     DFREE(buf);
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 };
 
-                if (MC_WriteBuffer (mem, CONTEXT_get_xDI(ctx), BUF_SIZE, buf)==false)
+                if (MC_WriteBuffer (mem, blk_dst, BUF_SIZE, buf)==false)
                 {
                     DFREE(buf);
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
                 };
 
                 DFREE(buf);
-                CONTEXT_set_xSI (ctx, CONTEXT_get_xSI (ctx) + BUF_SIZE);
-                CONTEXT_set_xDI (ctx, CONTEXT_get_xDI (ctx) + BUF_SIZE);
+                if (DF==false)
+                {
+                    CONTEXT_set_xSI (ctx, CONTEXT_get_xSI (ctx) + BUF_SIZE);
+                    CONTEXT_set_xDI (ctx, CONTEXT_get_xDI (ctx) + BUF_SIZE);
+                }
+                else
+                {
+                    CONTEXT_set_xSI (ctx, CONTEXT_get_xSI (ctx) - BUF_SIZE);
+                    CONTEXT_set_xDI (ctx, CONTEXT_get_xDI (ctx) - BUF_SIZE);
+                };
                 CONTEXT_set_xCX (ctx, 0);
+                
+                //printf ("%s() (after) SI=0x" PRI_REG_HEX "\n", __func__, CONTEXT_get_xSI(ctx));
+                //printf ("%s() (after) DI=0x" PRI_REG_HEX "\n", __func__, CONTEXT_get_xDI(ctx));
+                
                 goto add_to_PC_and_return_OK;
             };
 
