@@ -282,6 +282,16 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
             };
             break;
 
+        case I_PUSHFD:
+            if (DO_PUSH (ctx, mem, ctx->EFlags | FLAG_TF)==false)
+            {
+                if (x86_emu_debug)
+                    L ("%s() I_PUSHFD: can't write memory\n", __func__);
+                return DA_EMULATED_CANNOT_WRITE_MEMORY;
+            };
+            goto add_to_PC_and_return_OK;
+            break;
+
         case I_POP:
             {
                 REG val;
@@ -294,6 +304,16 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
             };
             break;
 
+        case I_POPFD:
+            {
+                REG val;
+                if (DO_POP(ctx, mem, &val)==false)
+                    return DA_EMULATED_CANNOT_READ_MEMORY;
+                ctx->EFlags=val;
+                goto add_to_PC_and_return_OK;
+            };
+            break;
+        
         case I_LEAVE:
             {
                 //ESP <- EBP
