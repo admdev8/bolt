@@ -41,7 +41,7 @@ void Da_emulate_tests()
 				MC_WriteREG(mc, 0, val);
 				b=Da_Da(Fuzzy_False, (BYTE*)opcodes[f], ctx.Eip, &da);
 				oassert(b);
-				r=Da_emulate(&da, &ctx, mc);
+				r=Da_emulate(&da, &ctx, mc, false, 0);
 				oassert(r==DA_EMULATED_OK);
 				b=MC_ReadREG(mc, 0, &result);	
 				oassert(b);
@@ -66,7 +66,7 @@ void Da_emulate_tests()
 			ctx.EFlags=flags;
 			b=Da_Da(Fuzzy_False, (BYTE*)opcodes[f], ctx.Eip, &da);
 			oassert(b);
-			r=Da_emulate(&da, &ctx, mc);
+			r=Da_emulate(&da, &ctx, mc, false, 0);
 			oassert(r==DA_EMULATED_OK);
 			tetrabyte intrin_result, intrin_result_flags=flags;
 			intrin_funcs[f] (op1, op2, &intrin_result, &intrin_result_flags);
@@ -87,7 +87,7 @@ void Da_emulate_tests()
 			ctx.EFlags=flags;
 			b=Da_Da(Fuzzy_False, (BYTE*)opcodes[f], ctx.Eip, &da);
 			oassert(b);
-			r=Da_emulate(&da, &ctx, mc);
+			r=Da_emulate(&da, &ctx, mc, false, 0);
 			oassert(r==DA_EMULATED_OK);
 			tetrabyte intrin_result, intrin_result_flags=flags;
 			intrin_funcs[f] (op1, &intrin_result, &intrin_result_flags);
@@ -114,7 +114,7 @@ void Da_emulate_tests()
 		ctx.EFlags=flags;
 		b=Da_Da(Fuzzy_False, (BYTE*)X86_XOR_EAX_EBX, ctx.Eip, &da);
 		oassert(b);
-		r=Da_emulate(&da, &ctx, mc);
+		r=Da_emulate(&da, &ctx, mc, false, 0);
 		oassert(r==DA_EMULATED_OK);
 		tetrabyte intrin_result, intrin_result_flags=flags;
 		intrin_XOR_addr (&op1, op2, &intrin_result, &intrin_result_flags);
@@ -129,28 +129,28 @@ void Da_emulate_tests()
 		ctx.Eax=1;
 		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_EAX_AL, ctx.Eip, &da);
 		oassert(b);
-		r=Da_emulate(&da, &ctx, mc);
+		r=Da_emulate(&da, &ctx, mc, false, 0);
 		oassert(r==DA_EMULATED_OK);
 		oassert(ctx.Eax==1);
 		
 		ctx.Eax=0x80;
 		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_AX_AL, ctx.Eip, &da);
 		oassert(b);
-		r=Da_emulate(&da, &ctx, mc);
+		r=Da_emulate(&da, &ctx, mc, false, 0);
 		oassert(r==DA_EMULATED_OK);
 		oassert(ctx.Eax==0xFF80);
 		
 		ctx.Eax=0x80;
 		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_EAX_AL, ctx.Eip, &da);
 		oassert(b);
-		r=Da_emulate(&da, &ctx, mc);
+		r=Da_emulate(&da, &ctx, mc, false, 0);
 		oassert(r==DA_EMULATED_OK);
 		oassert(ctx.Eax==0xFFFFFF80);
 		
 		ctx.Eax=0x8123;
 		b=Da_Da(Fuzzy_False, (BYTE*)X86_MOVSX_EAX_AX, ctx.Eip, &da);
 		oassert(b);
-		r=Da_emulate(&da, &ctx, mc);
+		r=Da_emulate(&da, &ctx, mc, false, 0);
 		oassert(r==DA_EMULATED_OK);
 		oassert(ctx.Eax==0xFFFF8123);
 	};

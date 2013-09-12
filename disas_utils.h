@@ -22,15 +22,16 @@
 #include "datatypes.h"
 #include "lisp.h"
 #include "x86_disas.h"
+#include "bitfields.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
 bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, MemoryCache *mem, const char *fname, 
-        unsigned fileline, obj *result);
-bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem);
-address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem);
+        unsigned fileline, obj *result, unsigned ins_prefixes, address FS);
+bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
+address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
 
 #ifdef  __cplusplus
 }

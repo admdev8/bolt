@@ -20,7 +20,7 @@
 #include "X86_register_helpers.h"
 
 bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, MemoryCache *mem, 
-        const char *fname, unsigned fileline, obj *result)
+        const char *fname, unsigned fileline, obj *result, unsigned ins_prefixes, address FS)
 {
     bool b;
 
@@ -40,7 +40,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
 
     if (op->type==DA_OP_TYPE_VALUE_IN_MEMORY)
     {
-        *rt_adr=(REG)Da_op_calc_adr_of_op (op, ctx, mem);
+        *rt_adr=(REG)Da_op_calc_adr_of_op (op, ctx, mem, ins_prefixes, FS);
 
         switch (op->value_width_in_bits)
         {
@@ -102,6 +102,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
             };
         default:
             oassert(!"unknown value_width_in_bits");
+            fatal_error();
             break;
         };
 
@@ -112,9 +113,10 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
 	L ("%s(): type=%d!\n", __FUNCTION__, type);
 #endif
 	oassert(0); // should not be here
+    fatal_error();
 };
 
-bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem) 
+bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS) 
 {
     address adr;
 
@@ -125,7 +127,7 @@ bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem
             return true;
 
         case DA_OP_TYPE_VALUE_IN_MEMORY:
-            adr=(address)Da_op_calc_adr_of_op(op, ctx, mem);
+            adr=(address)Da_op_calc_adr_of_op(op, ctx, mem, ins_prefixes, FS);
 
             switch (op->value_width_in_bits)
             {
@@ -158,19 +160,23 @@ bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem
 
                 default:
                     oassert(!"unsupported value_width_in_bits");
+                    fatal_error();
             };
 
         default:
             oassert(!"unsupported type");
+            fatal_error();
     };
 COPY_FAILED:
     L ("%s(): Error writing at 0x" PRI_ADR_HEX ". Copy failed.\n", __FUNCTION__, adr);
     return false;
 };
 
-address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem)
+address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     address adr=0;
+    address rt;
+
     oassert (op->type==DA_OP_TYPE_VALUE_IN_MEMORY);
     oassert (op->adr.adr_index_mult!=0);
 
@@ -180,7 +186,12 @@ address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem)
     if (op->adr.adr_index != R_ABSENT)
         adr=adr+X86_register_get_value_as_u64(op->adr.adr_index, ctx) * op->adr.adr_index_mult;
 
-    return adr+op->adr.adr_disp; // negative values of adr_disp must work! (to be checked)
+    rt=adr+op->adr.adr_disp; // negative values of adr_disp must work! (to be checked)
+
+    if (IS_SET(ins_prefixes, PREFIX_FS))
+        rt+=FS;
+    
+    return rt;
 };
 
 /* vim: set expandtab ts=4 sw=4 : */
