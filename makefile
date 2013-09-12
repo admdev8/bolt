@@ -35,6 +35,7 @@ TEST_SOURCES=PE_test.c tests.c
 TEST_EXECS=$(addprefix $(OUTDIR)/,$(TEST_SOURCES:.c=.exe))
 
 all: $(OUTDIR) $(LIBRARY)($(OBJECTS)) $(TEST_EXECS)
+	$(OUTDIR)\tests.exe
 
 $(OUTDIR):
 	mkdir $(OUTDIR)

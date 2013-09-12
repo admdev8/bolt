@@ -57,8 +57,8 @@ void Da_emulate_tests()
 	{
 		tetrabyte op1=genrand(), op2=genrand(), flags=genrand() & FLAG_PSAZOC;
 
-		void (*intrin_funcs[])(tetrabyte, tetrabyte, tetrabyte*, tetrabyte*)={ &intrin_ADD, /* &intrin_ADC, */ &intrin_SUB, &intrin_SBB, &intrin_XOR, &intrin_OR, &intrin_AND };
-		const char *opcodes[]={ X86_ADD_EAX_EBX, /* X86_ADC_EAX_EBX, */ X86_SUB_EAX_EBX, X86_SBB_EAX_EBX, X86_XOR_EAX_EBX, X86_OR_EAX_EBX, X86_AND_EAX_EBX };
+		void (*intrin_funcs[])(tetrabyte, tetrabyte, tetrabyte*, tetrabyte*)={ &intrin_ADD, &intrin_ADC, &intrin_SUB, &intrin_SBB, &intrin_XOR, &intrin_OR, &intrin_AND };
+		const char *opcodes[]={ X86_ADD_EAX_EBX, X86_ADC_EAX_EBX, X86_SUB_EAX_EBX, X86_SBB_EAX_EBX, X86_XOR_EAX_EBX, X86_OR_EAX_EBX, X86_AND_EAX_EBX };
 		for (int f=0; f<6; f++)
 		{
 			ctx.Eax=op1;
@@ -72,6 +72,36 @@ void Da_emulate_tests()
 			intrin_funcs[f] (op1, op2, &intrin_result, &intrin_result_flags);
 			oassert(ctx.Eax==intrin_result);
 			oassert((ctx.EFlags & FLAG_PSAZOC)==(intrin_result_flags & FLAG_PSAZOC));
+		};
+	};
+	
+	for (unsigned i=0; i<1000; i++)
+	{
+		tetrabyte op1=genrand(), flags=genrand() & FLAG_PSAZOC;
+
+		void (*intrin_funcs[])(tetrabyte, tetrabyte*, tetrabyte*)={ &intrin_NOT, &intrin_NEG };
+		const char *opcodes[]={ X86_NOT_EAX, X86_NEG_EAX };
+		for (int f=0; f<2; f++)
+		{
+			ctx.Eax=op1;
+			ctx.EFlags=flags;
+			b=Da_Da(Fuzzy_False, (BYTE*)opcodes[f], ctx.Eip, &da);
+			oassert(b);
+			r=Da_emulate(&da, &ctx, mc);
+			oassert(r==DA_EMULATED_OK);
+			tetrabyte intrin_result, intrin_result_flags=flags;
+			intrin_funcs[f] (op1, &intrin_result, &intrin_result_flags);
+			oassert(ctx.Eax==intrin_result);
+			if ((ctx.EFlags & FLAG_PSAZOC) != (intrin_result_flags & FLAG_PSAZOC))
+			{
+				printf ("flags are not equal. emulated:\n");
+    				dump_flags(&cur_fds, ctx.EFlags & FLAG_PSAZOC);
+				printf ("\n");
+				printf ("should be:\n");
+    				dump_flags(&cur_fds, intrin_result_flags & FLAG_PSAZOC);
+				printf ("\n");
+				fatal_error();
+			};
 		};
 	};
 	

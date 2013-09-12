@@ -454,6 +454,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
             break;
 
         case I_ADD:
+        case I_ADC:
         case I_INC:
             {
                 //L (__FUNCTION__ "() I_ADD/I_INC begin: [%s]\n", ToString().c_str());
@@ -463,7 +464,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                 b=Da_op_get_value_of_op (&d->op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
-                if (d->ins_code==I_ADD)
+                if (d->ins_code==I_ADD || d->ins_code==I_ADC)
                 {
                     oassert (d->op[0].value_width_in_bits==d->op[1].value_width_in_bits);
                     b=Da_op_get_value_of_op (&d->op[1], &rt2_adr, ctx, mem, __FILE__, __LINE__, &rt2);
@@ -478,12 +479,14 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
 
                 obj res_sum;
                 obj_add (&rt1, &rt2, &res_sum);
+                if (d->ins_code==I_ADC && CF)
+                   obj_increment(&res_sum); 
 
                 set_PF (ctx, &res_sum);
                 set_SF (ctx, &res_sum);
                 set_ZF (ctx, &res_sum);
                 set_AF (ctx, &rt1, &rt2, &res_sum);
-                if (d->ins_code==I_ADD)
+                if (d->ins_code==I_ADD || d->ins_code==I_ADC)
                     set_or_clear_flag (ctx, FLAG_CF, obj_compare (&res_sum, &rt1)==-1); // res_sum < rt1
 
                 octabyte tmp=((zero_extend_to_REG(&rt1) ^ zero_extend_to_REG(&rt2) ^ 
@@ -499,6 +502,43 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem)
                 goto add_to_PC_and_return_OK;
             };
             break;
+
+        case I_NOT:
+            {
+                obj rt1, res;
+                REG rt1_adr;
+                if (Da_op_get_value_of_op (&d->op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1)==false)
+                    return DA_EMULATED_CANNOT_READ_MEMORY;
+
+                obj_NOT(&rt1, &res);
+                
+                if (Da_op_set_value_of_op (&d->op[0], &res, ctx, mem))
+                    goto add_to_PC_and_return_OK;
+            };
+            break;
+        
+        case I_NEG:
+            {
+                obj rt1, res;
+                REG rt1_adr;
+                if (Da_op_get_value_of_op (&d->op[0], &rt1_adr, ctx, mem, __FILE__, __LINE__, &rt1)==false)
+                    return DA_EMULATED_CANNOT_READ_MEMORY;
+
+                obj_NEG(&rt1, &res);
+                set_or_clear_flag (ctx, FLAG_CF, obj_is_zero(&rt1)==false);
+                
+                set_PF (ctx, &res);
+                set_SF (ctx, &res);
+                set_ZF (ctx, &res);
+                set_or_clear_flag (ctx, FLAG_AF, (0 ^ obj_get_4th_bit(&rt1)) ^ obj_get_4th_bit(&res));
+                REMOVE_BIT (ctx->EFlags, FLAG_OF);
+                //SET_BIT (ctx->EFlags, FLAG_AF);
+                
+                if (Da_op_set_value_of_op (&d->op[0], &res, ctx, mem))
+                    goto add_to_PC_and_return_OK;
+            };
+            break;
+
 
         case I_OR:
         case I_XOR:
