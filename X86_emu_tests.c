@@ -12,6 +12,7 @@
 
 void Da_emulate_tests()
 {
+#ifndef _WIN64	
 	Da_emulate_result r;	
 	CONTEXT ctx;
 	bool b;
@@ -154,4 +155,5 @@ void Da_emulate_tests()
 		oassert(r==DA_EMULATED_OK);
 		oassert(ctx.Eax==0xFFFF8123);
 	};
+#endif	
 };

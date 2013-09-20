@@ -228,6 +228,9 @@ bool ins_traced_by_one_step(Ins_codes i)
 
 Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulate_FS_accesses, address FS)
 {
+#ifdef _WIN64
+    return DA_NOT_EMULATED;
+#endif        
     //bool SF=IS_SET(ctx->EFlags, FLAG_SF);
     //bool OF=IS_SET(ctx->EFlags, FLAG_OF);
     //bool ZF=IS_SET(ctx->EFlags, FLAG_ZF);
