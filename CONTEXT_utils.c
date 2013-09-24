@@ -13,8 +13,9 @@
  *
  */
 
-#include "oassert.h"
 #include <math.h>
+
+#include "oassert.h"
 
 #include "CONTEXT_utils.h"
 #include "address.h"
@@ -22,28 +23,60 @@
 #include "bitfields.h"
 #include "x86.h"
 
-XSAVE_FORMAT* get_XSAVE_FORMAT(CONTEXT *ctx)
+#ifdef THIS_CODE_IS_NOT_WORKING
+static unsigned FPU_STx_reg_to_phys_reg(const CONTEXT *ctx, unsigned STx_reg)
+{
+    oassert(STx_reg<8);
+    unsigned top=FPU_TOP(ctx->FloatSave.StatusWord);
+    //return (STx_reg+top)&7; // addition by modulo 8
+    return STx_reg;
+};
+
+static unsigned FPU_get_tag_from_tagword(const CONTEXT *ctx, unsigned STx_reg)
+{
+    oassert(STx_reg<8);
+    unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, STx_reg);
+    wyde tagword=ctx->FloatSave.TagWord;
+    unsigned tag=(tagword>>(phys_reg*2))&3;
+    return tag;
+};
+#endif
+
+XMM_SAVE_AREA32* get_XMM_SAVE_AREA32 (CONTEXT *ctx)
 {
 #ifdef _WIN64
-    return &ctx->FltSave;
-#else
-    return &ctx->ExtendedRegisters[0];
+    return &ctx->FloatSave;
+#else    
+    return (XMM_SAVE_AREA32*)ctx->ExtendedRegisters;
+#endif    
+};
+
+#ifdef THIS_CODE_IS_NOT_WORKING
+bool STx_present_in_tag(CONTEXT *ctx, unsigned STx_reg)
+{
+    oassert(STx_reg<8);
+    return FPU_get_tag_from_tagword(ctx, STx_reg)!=FPU_TAG_EMPTY;
+};
+
+void _FPU_set_tag(CONTEXT *ctx, unsigned reg, unsigned type)
+{
+    oassert(reg<8);
+    unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, reg);
+    unsigned pos=phys_reg*2;
+    ctx->FloatSave.TagWord&=~(3<<pos);
+    ctx->FloatSave.TagWord|=type<<pos;
+};
 #endif
-};
 
-bool STx_present_in_tag(CONTEXT *ctx, unsigned reg)
+double get_STx (const CONTEXT *ctx, unsigned reg)
 {
-    return IS_SET(get_XSAVE_FORMAT(ctx)->TagWord, 1<<(7-reg));
-};
-
-void FPU_set_tag(CONTEXT *ctx, unsigned reg)
-{
-    SET_BIT(get_XSAVE_FORMAT(ctx)->TagWord, 1<<(7-reg));
-};
-
-double get_STx (CONTEXT *ctx, unsigned reg)
-{
-    return (double)*(long double*)&get_XSAVE_FORMAT(ctx)->FloatRegisters[reg];
+    oassert(reg<8);
+    //unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, reg);
+#ifdef _WIN64
+    return cvt80to64((byte*)&ctx->FloatSave.FloatRegisters[reg]);
+#else    
+    return cvt80to64((byte*)&ctx->FloatSave.RegisterArea[reg*10]);
+#endif    
 };
 
 void set_TF (CONTEXT *ctx)
@@ -369,7 +402,6 @@ void dump_DRx (fds* s, const CONTEXT *ctx)
 
 void dump_CONTEXT (fds* s, CONTEXT * ctx, bool _dump_FPU, bool _dump_DRx, bool dump_xmm_regs)
 {
-    XSAVE_FORMAT *x=get_XSAVE_FORMAT(ctx);
     int i;
 
 #ifdef _WIN64
@@ -397,15 +429,15 @@ void dump_CONTEXT (fds* s, CONTEXT * ctx, bool _dump_FPU, bool _dump_DRx, bool d
     if (sse_supported() && dump_xmm_regs)
     {
         strbuf sb_MXCSR=STRBUF_INIT;
-        MXCSR_to_str(x->MxCsr, &sb_MXCSR);
+        MXCSR_to_str(get_XMM_SAVE_AREA32(ctx)->MxCsr, &sb_MXCSR);
         L_fds(s, "MxCsr=%s\n", sb_MXCSR.buf);
         strbuf_deinit(&sb_MXCSR);
         
         for (i=0; i<XMM_REGISTERS_TOTAL; i++)
-            if (memcmp (((BYTE*)&x->XmmRegisters[i]), empty_XMM_register, 16)!=0) // isn't empty?
+            if (memcmp (((BYTE*)&get_XMM_SAVE_AREA32(ctx)->XmmRegisters[i]), empty_XMM_register, 16)!=0) // isn't empty?
             {
                 strbuf sb=STRBUF_INIT;
-                XMM_to_strbuf((BYTE*)&x->XmmRegisters[i], &sb);
+                XMM_to_strbuf((BYTE*)&get_XMM_SAVE_AREA32(ctx)->XmmRegisters[i], &sb);
                 L_fds (s, "XMM%d = %s\n", i, sb.buf);
                 strbuf_deinit(&sb);
             };
@@ -416,9 +448,6 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
 {
     bool rt=true; // so far so good
     DWORD new_eflags1, new_eflags2;
-
-    XSAVE_FORMAT *t1=get_XSAVE_FORMAT(ctx1);
-    XSAVE_FORMAT *t2=get_XSAVE_FORMAT(ctx2);
 
     unsigned i;
 #ifdef _WIN64
@@ -484,7 +513,7 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
 
     for (i=0; i<16; i++)
     {
-        if (memcmp (&t1->XmmRegisters[i], &t2->XmmRegisters[i], 16)!=0)
+        if (memcmp (&get_XMM_SAVE_AREA32(ctx1)->XmmRegisters[i], &get_XMM_SAVE_AREA32(ctx2)->XmmRegisters[i], 16)!=0)
         {
             L ("XMM%d is different in ctx1 and ctx2\n", i);
             rt=false;
@@ -543,26 +572,16 @@ void CONTEXT_set_reg (CONTEXT * ctx, X86_register r, REG v)
     };
 };
 
-void CONTEXT_set_reg_STx (CONTEXT * ctx, X86_register r, double v)
+void CONTEXT_set_reg_STx (CONTEXT * ctx, unsigned idx, double v)
 {
-    int idx;
+    oassert(idx<8);
+    //unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, idx);
 
-    switch (r)
-    {
-    case R_ST0: idx=0; break;
-    case R_ST1: idx=1; break;
-    case R_ST2: idx=2; break;
-    case R_ST3: idx=3; break;
-    case R_ST4: idx=4; break;
-    case R_ST5: idx=5; break;
-    case R_ST6: idx=6; break;
-    case R_ST7: idx=7; break;
-    default:
-        oassert (0);
-        break;
-    };
-
-    *(long double*)&get_XSAVE_FORMAT(ctx)->FloatRegisters[idx]=(long double)v;
+#ifdef _WIN64
+    cvt64to80(v, (byte*)&ctx->FloatSave.FloatRegisters[idx]);
+#else
+    cvt64to80(v, (byte*)&ctx->FloatSave.RegisterArea[idx*10]);
+#endif
 };
 
 void CONTEXT_clear_bp_in_DR7 (CONTEXT * ctx, int bp_n)
@@ -684,77 +703,81 @@ void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx)
     L_fds (s, "\n");
 };
 
+#ifdef THIS_CODE_IS_NOT_WORKING
+static const char* FPU_tags[]={ "NonZero", "Zero", "NaN", "Empty" };
+
+static void dump_FPU_tag_word(fds* s, CONTEXT *ctx)
+{
+    wyde tagword=ctx->FloatSave.TagWord;
+    L_fds (s, "FPU TagWord=0x%x ", tagword);
+    for (int ST=0; ST<8; ST++)
+    {
+        unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, ST);
+        unsigned tag=FPU_get_tag_from_tagword(ctx, ST);
+        L_fds (s, "ST%d(phys_reg=%d):%s ", ST, phys_reg, FPU_tags[tag]);
+    };
+    L_fds (s, "\n");
+};
+#endif
+
 void dump_FPU (fds* s, CONTEXT *ctx)
 {
     strbuf sb_FCW=STRBUF_INIT;
     strbuf sb_FSW=STRBUF_INIT;
-    unsigned r, i;
-    XSAVE_FORMAT *x=get_XSAVE_FORMAT(ctx);
     
-    if (x->TagWord==0)
+    if (ctx->FloatSave.TagWord==0xFFFF)
         return;
 
-    FCW_to_str(x->ControlWord, &sb_FCW);
-    FSW_to_str(x->StatusWord, &sb_FSW);
+    FCW_to_str(ctx->FloatSave.ControlWord, &sb_FCW);
+    FSW_to_str(ctx->FloatSave.StatusWord, &sb_FSW);
 
-    L_fds (s, "FPU ControlWord=%s\n", sb_FCW.buf);
-    L_fds (s, "FPU StatusWord=%s\n", sb_FSW.buf);
-    L_fds (s, "FPU TagWord=0x%x\n", x->TagWord);
+    L_fds (s, "FPU ControlWord=%s (0x%x)\n", sb_FCW.buf, ctx->FloatSave.ControlWord);
+    L_fds (s, "FPU StatusWord=%s (0x%x)\n", sb_FSW.buf, ctx->FloatSave.StatusWord);
+#ifdef THIS_CODE_IS_NOT_WORKING
+    dump_FPU_tag_word(s, ctx);
+#endif    
     strbuf_deinit(&sb_FCW);
     strbuf_deinit(&sb_FSW);
 
-    for (r=0; r<8; r++)
-        if (STx_present_in_tag (ctx, r))
+    for (unsigned ST=0; ST<8; ST++)
+    {
+#ifdef THIS_CODE_IS_NOT_WORKING
+        if (STx_present_in_tag (ctx, ST)==false)
+            continue;
+        unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, ST);
+#endif        
+
+#ifdef _WIN64
+        BYTE *b=(BYTE*)&ctx->FloatSave.FloatRegisters[ST];
+#else            
+        BYTE *b=(BYTE*)&ctx->FloatSave.RegisterArea[ST*10];
+#endif            
+        double a=get_STx(ctx, ST);
+
+        if (_isnan (a)==0)
+            L_fds (s, "FPU ST(%d): %lf\n", ST, a);
+        else
         {
-            BYTE *b=(BYTE*)&x->FloatRegisters[r];
-            double a=get_STx(ctx, r);
-
-            if (_isnan (a)==0)
-                L_fds (s, "FPU ST(%d): %lf\n", r, a);
-            else
-            {
-                L_fds (s, "FPU ST(%d): %lf / MM%d=", r, a, r);
-                for (i=0; i<8; i++)
-                    L_fds (s, "%02X", *(b+(7-i)));
-                L_fds (s, "\n");
-            };
+            L_fds (s, "FPU ST(%d): %lf / MM%d=", ST, a, ST);
+            for (unsigned i=0; i<8; i++)
+                L_fds (s, "%02X", *(b+(7-i)));
+            L_fds (s, "\n");
         };
+    };
 };
 
-const char *get_BP_register_name()
-{
 #ifdef _WIN64
-    return "RBP";
+const char *AX_register_name="RAX";
+const char *BX_register_name="RBX";
+const char *CX_register_name="RCX";
+const char *DX_register_name="RDX";
+const char *BP_register_name="RBP";
 #else
-    return "EBP";
+const char *AX_register_name="EAX";
+const char *BX_register_name="EBX";
+const char *CX_register_name="ECX";
+const char *DX_register_name="EDX";
+const char *BP_register_name="EBP";
 #endif
-};
-
-const char *get_AX_register_name()
-{
-#ifdef _WIN64
-    return "RAX";
-#else
-    return "EAX";
-#endif
-};
-
-const char *get_CX_register_name()
-{
-#ifdef _WIN64
-    return "RCX";
-#else
-    return "ECX";
-#endif
-};
-
-const char *get_DX_register_name()
-{
-#ifdef _WIN64
-    return "RDX";
-#else
-    return "EDX";
-#endif
-};
 
 /* vim: set expandtab ts=4 sw=4 : */

@@ -498,7 +498,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                 else
                 {   // INC case
                     // make second op 1
-                    obj_REG2_and_set_type (rt1.t, 1, &rt2);
+                    obj_REG2_and_set_type (rt1.t, 1, 0, &rt2);
                 };
 
                 obj res_sum;
@@ -632,7 +632,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                 if (d->ins_code==I_DEC)
                 {
                     // make second op 1
-                    obj_REG2_and_set_type (rt1.t, 1, &rt2);
+                    obj_REG2_and_set_type (rt1.t, 1, 0, &rt2);
                 }
                 else
                 {
@@ -812,14 +812,14 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                     if (d->ins_code==I_SHR)
                     {
                         REG new_v=zero_extend_to_REG(&op1) >> obj_get_as_byte (&op2);
-                        obj_REG2_and_set_type(op1.t, new_v, &new_op1);
+                        obj_REG2_and_set_type(op1.t, new_v, 0, &new_op1);
                     }
                     else if (d->ins_code==I_SAR)
                         obj2_sign_extended_shift_right (&op1, obj_get_as_byte(&op2), &new_op1);
                     else // SHL
                     {
                         REG new_v=zero_extend_to_REG(&op1) << obj_get_as_byte (&op2);
-                        obj_REG2_and_set_type(op1.t, new_v, &new_op1);
+                        obj_REG2_and_set_type(op1.t, new_v, 0, &new_op1);
                     };
 
                     if (Da_op_set_value_of_op (&d->op[0], &new_op1, ctx, mem, d->prefix_codes, FS)==false)

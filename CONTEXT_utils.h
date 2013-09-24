@@ -36,10 +36,11 @@
 extern "C" {
 #endif
 
-XSAVE_FORMAT* get_XSAVE_FORMAT(CONTEXT *ctx);
+XMM_SAVE_AREA32* get_XMM_SAVE_AREA32 (CONTEXT *ctx);
 bool STx_present_in_tag(CONTEXT *ctx, unsigned reg);
-void FPU_set_tag(CONTEXT *ctx, unsigned reg);
-double get_STx (CONTEXT *ctx, unsigned reg);
+
+void _FPU_set_tag(CONTEXT *ctx, unsigned reg, unsigned type);
+double get_STx (const CONTEXT *ctx, unsigned reg);
 
 void set_TF (CONTEXT *ctx);
 void clear_TF (CONTEXT *ctx);
@@ -78,7 +79,7 @@ void dump_CONTEXT (fds* s, CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dum
 
 bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2);
 
-void CONTEXT_set_reg (CONTEXT * ctx, X86_register r, REG v);
+void CONTEXT_set_reg (CONTEXT * ctx, unsigned idx, REG v);
 void CONTEXT_set_reg_STx (CONTEXT * ctx, X86_register r, double v);
 void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a);
 void CONTEXT_clear_bp_in_DR7 (CONTEXT * ctx, int bp_n);
@@ -103,10 +104,11 @@ bool is_B_cond (const CONTEXT * ctx);
 bool is_NB_cond (const CONTEXT * ctx);
 
 void dump_FPU (fds* s, CONTEXT *ctx);
-const char *get_BP_register_name();
-const char *get_AX_register_name();
-const char *get_CX_register_name();
-const char *get_DX_register_name();
+const char *AX_register_name;
+const char *BX_register_name;
+const char *CX_register_name;
+const char *DX_register_name;
+const char *BP_register_name;
 
 #ifdef  __cplusplus
 }

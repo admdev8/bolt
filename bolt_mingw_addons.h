@@ -28,8 +28,28 @@ typedef struct _M128A {
     ULONGLONG Low;
     LONGLONG High;
 } M128A, *PM128A;
+
+typedef struct _XMM_SAVE_AREA32 {
+  WORD ControlWord;
+  WORD StatusWord;
+  BYTE TagWord;
+  BYTE Reserved1;
+  WORD ErrorOpcode;
+  DWORD ErrorOffset;
+  WORD ErrorSelector;
+  WORD Reserved2;
+  DWORD DataOffset;
+  WORD DataSelector;
+  WORD Reserved3;
+  DWORD MxCsr;
+  DWORD MxCsr_Mask;
+  M128A FloatRegisters[8];
+  M128A XmmRegisters[16];
+  BYTE Reserved4[96];
+} XMM_SAVE_AREA32,*PXMM_SAVE_AREA32;
 #endif
 
+#if 0
 // same as XMM_SAVE_AREA32
 typedef struct _XSAVE_FORMAT {
     WORD   ControlWord;
@@ -68,6 +88,7 @@ typedef struct _XSAVE_FORMAT {
 
 #endif
 } XSAVE_FORMAT, *PXSAVE_FORMAT;
+#endif
 
 typedef struct _CLIENT_ID {
     HANDLE UniqueProcess;
