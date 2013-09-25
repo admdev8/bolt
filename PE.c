@@ -14,7 +14,7 @@
  */
 
 #include <windows.h>
-#include <assert.h>
+#include "oassert.h"
 #include <dbghelp.h>
 
 #include "porg_utils.h"

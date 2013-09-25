@@ -13,7 +13,7 @@
  *
  */
 
-#include <assert.h>
+#include "oassert.h"
 #include "stuff.h"
 #include "bolt_stuff.h"
 #include "porg_utils.h"
@@ -54,10 +54,10 @@ address TIB_get_stack_top (HANDLE THDL, MemoryCache *mem)
     NT_TIB TIB;
 
     TEB=get_TIB (THDL);
-    assert (TEB);
+    oassert (TEB);
 
     bool b=MC_ReadBuffer(mem, (REG)TEB, sizeof (TIB), (BYTE*)&TIB);
-    assert (b);
+    oassert (b);
 
     return (address)TIB.StackBase;
 };
@@ -68,10 +68,10 @@ address TIB_get_stack_bottom (HANDLE THDL, MemoryCache *mem)
     NT_TIB TIB;
 
     TEB=get_TIB (THDL);
-    assert (TEB);
+    oassert (TEB);
 
     bool b=MC_ReadBuffer(mem, (REG)TEB, sizeof (TIB), (BYTE*)&TIB);
-    assert (b);
+    oassert (b);
 
     return (address)TIB.StackLimit;
 };
@@ -82,10 +82,10 @@ address TIB_get_exceptionlist (HANDLE THDL, MemoryCache *mem)
     NT_TIB TIB;
 
     TEB=get_TIB (THDL);
-    assert (TEB);
+    oassert (TEB);
 
     bool b=MC_ReadBuffer(mem, (REG)TEB, sizeof (TIB), (BYTE*)&TIB);
-    assert (b);
+    oassert (b);
 
     return (address)TIB.ExceptionList;
 };
