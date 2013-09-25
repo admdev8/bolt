@@ -58,6 +58,9 @@ void CONTEXT_set_Accum (CONTEXT * ctx, REG A);
 REG CONTEXT_get_xCX (const CONTEXT * ctx);
 void CONTEXT_set_xCX (CONTEXT * ctx, REG val);
 
+REG CONTEXT_get_xBX (const CONTEXT * ctx);
+void CONTEXT_set_xBX (CONTEXT * ctx, REG val);
+
 REG CONTEXT_get_xDX (const CONTEXT * ctx);
 void CONTEXT_set_xDX (CONTEXT * ctx, REG val);
 
@@ -104,11 +107,6 @@ bool is_B_cond (const CONTEXT * ctx);
 bool is_NB_cond (const CONTEXT * ctx);
 
 void dump_FPU (fds* s, CONTEXT *ctx);
-const char *AX_register_name;
-const char *BX_register_name;
-const char *CX_register_name;
-const char *DX_register_name;
-const char *BP_register_name;
 
 #ifdef  __cplusplus
 }

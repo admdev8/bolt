@@ -273,6 +273,24 @@ void CONTEXT_set_xCX (CONTEXT * ctx, REG val)
 #endif
 };
 
+REG CONTEXT_get_xBX (const CONTEXT * ctx)
+{
+#ifdef _WIN64
+    return ctx->Rbx;
+#else
+    return ctx->Ebx;
+#endif
+};
+
+void CONTEXT_set_xBX (CONTEXT * ctx, REG val)
+{
+#ifdef _WIN64
+    ctx->Rbx=val;
+#else
+    ctx->Ebx=val;
+#endif
+};
+
 REG CONTEXT_get_xDX (const CONTEXT * ctx)
 {
 #ifdef _WIN64
@@ -765,19 +783,5 @@ void dump_FPU (fds* s, CONTEXT *ctx)
         };
     };
 };
-
-#ifdef _WIN64
-const char *AX_register_name="RAX";
-const char *BX_register_name="RBX";
-const char *CX_register_name="RCX";
-const char *DX_register_name="RDX";
-const char *BP_register_name="RBP";
-#else
-const char *AX_register_name="EAX";
-const char *BX_register_name="EBX";
-const char *CX_register_name="ECX";
-const char *DX_register_name="EDX";
-const char *BP_register_name="EBP";
-#endif
 
 /* vim: set expandtab ts=4 sw=4 : */
