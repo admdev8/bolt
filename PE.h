@@ -34,6 +34,10 @@ typedef struct _PE_info
 
 typedef void (*callback_add_symbol)(address a, char *name, void* param);
 
+void MapAndLoad_or_die(PSTR image_name, PSTR dllpath, 
+        PLOADED_IMAGE LoadedImage, bool DotDll, bool ReadOnly);
+void UnMapAndLoad_or_die(PLOADED_IMAGE LoadedImage);
+
 void PE_get_sections_info (char *fname, IMAGE_SECTION_HEADER **sections, unsigned *sections_total);
 void PE_get_info (char *fname, address loaded_base, PE_info *out, callback_add_symbol add_symbol_fn, void *add_symbol_fn_params);
 void PE_info_free (PE_info *i);

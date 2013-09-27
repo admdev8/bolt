@@ -49,47 +49,6 @@ typedef struct _XMM_SAVE_AREA32 {
 } XMM_SAVE_AREA32,*PXMM_SAVE_AREA32;
 #endif
 
-#if 0
-// same as XMM_SAVE_AREA32
-typedef struct _XSAVE_FORMAT {
-    WORD   ControlWord;
-    WORD   StatusWord;
-    BYTE  TagWord;
-    BYTE  Reserved1;
-    WORD   ErrorOpcode;
-    DWORD ErrorOffset;
-    WORD   ErrorSelector;
-    WORD   Reserved2;
-    DWORD DataOffset;
-    WORD   DataSelector;
-    WORD   Reserved3;
-    DWORD MxCsr;
-    DWORD MxCsr_Mask;
-    M128A FloatRegisters[8];
-
-#if defined(_WIN64)
-
-    M128A XmmRegisters[16];
-    BYTE  Reserved4[96];
-
-#else
-
-    M128A XmmRegisters[8];
-    BYTE  Reserved4[192];
-
-    //
-    // The fields below are not part of XSAVE/XRSTOR format.
-    // They are written by the OS which is relying on a fact that
-    // neither (FX)SAVE nor (F)XSTOR used this area.
-    //
-
-    DWORD   StackControl[7];    // KERNEL_STACK_CONTROL structure actualy
-    DWORD   Cr0NpxState;
-
-#endif
-} XSAVE_FORMAT, *PXSAVE_FORMAT;
-#endif
-
 typedef struct _CLIENT_ID {
     HANDLE UniqueProcess;
     HANDLE UniqueThread;

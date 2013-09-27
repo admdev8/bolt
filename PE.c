@@ -28,7 +28,7 @@
 BOOL _IMAGEHLPAPI MapAndLoad(LPSTR,LPSTR,PLOADED_IMAGE,BOOL,BOOL); 
 BOOL _IMAGEHLPAPI UnMapAndLoad(PLOADED_IMAGE); 
 
-static void MapAndLoad_or_die(PSTR image_name, PSTR dllpath, 
+void MapAndLoad_or_die(PSTR image_name, PSTR dllpath, 
         PLOADED_IMAGE LoadedImage, bool DotDll, bool ReadOnly)
 {
     if (MapAndLoad (image_name, dllpath, LoadedImage, DotDll, ReadOnly)==false)
@@ -39,7 +39,7 @@ static void MapAndLoad_or_die(PSTR image_name, PSTR dllpath,
     };
 };
 
-static void UnMapAndLoad_or_die(PLOADED_IMAGE LoadedImage)
+void UnMapAndLoad_or_die(PLOADED_IMAGE LoadedImage)
 {
     if (UnMapAndLoad(LoadedImage)==false)
         die_GetLastError ("UnMapAndLoad() failed.");
@@ -88,9 +88,13 @@ void PE_get_info (char *fname, address loaded_base, PE_info *out, callback_add_s
     im_opt_header_64=(IMAGE_OPTIONAL_HEADER64*)&im_nt_headers_64->OptionalHeader;
 
     if (out->PE32_plus)
+    {
         export_dir=(IMAGE_EXPORT_DIRECTORY*)ImageRvaToVa (im.FileHeader, im.MappedAddress, im_opt_header_64->DataDirectory[0].VirtualAddress, NULL);
+    }
     else
+    {
         export_dir=(IMAGE_EXPORT_DIRECTORY*)ImageRvaToVa (im.FileHeader, im.MappedAddress, im_opt_header_32->DataDirectory[0].VirtualAddress, NULL);
+    };
 
 #ifdef _WIN64
     out->original_base=im_opt_header_64->ImageBase;
