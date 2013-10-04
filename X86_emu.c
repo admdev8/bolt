@@ -805,7 +805,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                     if (d->ins_code==I_SHR || d->ins_code==I_SAR)
                         new_CF=(zero_extend_to_octabyte(&op1) >> (obj_get_as_byte (&op2) - 1)) & 1;
                     else // SHL
-                        new_CF=(zero_extend_to_octabyte(&op1) >> (32 - obj_get_as_byte (&op2))) & 1;
+                        new_CF=(zero_extend_to_octabyte(&op1) >> (obj_width_in_bits(&op1) - obj_get_as_byte (&op2))) & 1;
 
                     obj new_op1;
 

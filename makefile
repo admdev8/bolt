@@ -26,12 +26,12 @@ CPPFLAGS=-D_DEBUG -I$(OCTOTHORPE) -I$(X86_DISASM) -I$(PORG) $(CPPFLAGS_ADD)
 CFLAGS=-c -Wall -g -std=c11
 #CFLAGS=-c -Wall -g -std=gnu99
 SOURCES=CONTEXT_utils.c disas_utils.c memorycache.c X86_register_helpers.c PE.c X86_emu.c \
-	bolt_stuff.c X86_emu_tests.c
+	bolt_stuff.c X86_emu_tests.c PE_imports.c
 DEPFILES=$(SOURCES:.c=.d)
 OUTDIR=$(MSYSTEM)_$(bsuffix)
 OBJECTS=$(addprefix $(OUTDIR)/,$(SOURCES:.c=.o))
 LIBRARY=$(OUTDIR)\bolt.a
-TEST_SOURCES=PE_test.c tests.c PE_dump_imports.c
+TEST_SOURCES=PE_test.c tests.c PE_dump_imports.c PE_imports_test.c PE_add_import.c
 TEST_EXECS=$(addprefix $(OUTDIR)/,$(TEST_SOURCES:.c=.exe))
 
 all: $(OUTDIR) $(LIBRARY)($(OBJECTS)) $(TEST_EXECS)
