@@ -1,3 +1,18 @@
+/*
+ *  _           _ _   
+ * | |         | | |  
+ * | |__   ___ | | |_ 
+ * | '_ \ / _ \| | __|
+ * | |_) | (_) | | |_ 
+ * |_.__/ \___/|_|\__|
+ *
+ * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License. 
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/.
+ *
+ */
+
 #include "dmalloc.h"
 #include "oassert.h"
 #include "PE.h"
@@ -225,4 +240,3 @@ address PE_find_thunk_by_import (struct PE_get_imports_info *i, unsigned DLL_no,
 	oassert(sym_no <= NULL_terminated_array_of_pointers_size((void**)i->symbols[DLL_no]));
 	return i->FirstThunk[DLL_no] + sym_no*sizeof(address);
 };
-

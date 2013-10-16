@@ -1,3 +1,18 @@
+/*
+ *  _           _ _   
+ * | |         | | |  
+ * | |__   ___ | | |_ 
+ * | '_ \ / _ \| | __|
+ * | |_) | (_) | | |_ 
+ * |_.__/ \___/|_|\__|
+ *
+ * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License. 
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/.
+ *
+ */
+
 #include <windows.h>
 #include <stdbool.h>
 #include "oassert.h"
@@ -60,7 +75,7 @@ void PE_util_add_symbol_to_imports (char *fname, char *dll_name, char *sym_name,
 	calculate_next_available_RVA_and_phys_ofs(&im, &next_available_RVA, &next_available_phys_ofs);
 
 	i_tbl->start_RVA=next_available_RVA; // of new section
-	byte buf[0x8000]; // FIXME
+	byte buf[0x8000]; // FIXME! but I need tests...
 	bzero(buf, sizeof(buf));
 	size_t new_tbl_size=PE_generate_import_table (i_tbl, /* place_thunks */ false, buf, sizeof(buf));
 	// add "copyright"!
