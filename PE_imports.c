@@ -104,10 +104,8 @@ struct PE_get_imports_info* PE_get_imports_info_deep_copy(struct PE_get_imports_
 
 bool dll_present_in_imports (struct PE_get_imports_info *i, char *dll)
 {
-	for (int DLL=0; DLL < i->import_descriptors_t; DLL++)
-		if (stricmp (dll, i->DLL_names[DLL])==0)
-			return true;
-	return false;
+	return find_string_in_array_of_strings(dll, i->DLL_names, i->import_descriptors_t, 
+		true, false)==-1 ? false : true;
 };
 
 void dump_imports (struct PE_get_imports_info *i)

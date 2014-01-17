@@ -95,4 +95,18 @@ bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, MemoryCache *mem)
     return p<=TIB_get_stack_top (THDL, mem) && p>=TIB_get_stack_bottom (THDL, mem);
 };
 
+address TIB_get_current_SEH_frame (MemoryCache *mc, HANDLE THDL)
+{
+    PNT_TIB TEB;
+    NT_TIB TIB;
+
+    TEB=get_TIB (THDL);
+    oassert (TEB);
+
+    bool b=MC_ReadBuffer(mc, (REG)TEB, sizeof (TIB), (BYTE*)&TIB);
+    oassert (b);
+
+    return (address)TIB.ExceptionList;
+};
+
 /* vim: set expandtab ts=4 sw=4 : */
