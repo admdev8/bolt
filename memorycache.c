@@ -98,7 +98,7 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 {
 	address idx, rd_adr;
 	SIZE_T bytes_read;
-	MemoryCacheElement *t;
+	MemoryCacheElement *t=NULL;
 
 #ifndef _WIN64
 	// as of win32
@@ -122,7 +122,9 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 #ifdef _DEBUG
 	if (mc->testing)
 	{
-		oassert (rd_adr+PAGE_SIZE <= mc->testing_memory_size);
+		if (rd_adr+PAGE_SIZE > mc->testing_memory_size)
+			goto free_t_and_return_false;
+
 		memcpy (t->block, mc->testing_memory+rd_adr, PAGE_SIZE);
 		bytes_read=PAGE_SIZE;
 	};
@@ -132,15 +134,15 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 	if (mc->testing==false)
 #endif
 		if (ReadProcessMemory (mc->PHDL, (LPCVOID)rd_adr, t->block, PAGE_SIZE, &bytes_read)==false)
-		{
-			DFREE (t);
-			//L (2, __FUNCTION__ "(0x" PRI_ADR_HEX "): can't read process memory at 0x" PRI_ADR_HEX "\n", adr, rd_adr);
-			return false;
-		};
+			goto free_t_and_return_false;
 
 	oassert (bytes_read==PAGE_SIZE);
 	rbtree_insert(mc->_cache, (void*)idx, t);
 	return true;
+
+free_t_and_return_false:
+	DFREE(t);
+	return false;
 };
 
 bool MC_ReadBuffer (MemoryCache *mc, address adr, SIZE_T size, BYTE* outbuf)
