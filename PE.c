@@ -201,6 +201,7 @@ void PE_info_free (PE_info *i)
 	DFREE(i);
 };
 
+// untested
 void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* param)
 {
 	tetrabyte* fixups=PE_get_reloc_directory (im, PE_is_PE32(im));
@@ -240,6 +241,25 @@ unsigned count_fixups (LOADED_IMAGE *im)
 
 	return cnt;
 };
+
+// untested
+static void make_array_of_fixups_callback_fn (unsigned i, byte type, address a, void *param)
+{
+	oassert(type==IMAGE_REL_BASED_HIGHLOW);
+	((DWORD*)param)[i]=a;
+};
+
+// untested
+DWORD *make_array_of_fixups (LOADED_IMAGE *im, unsigned *cnt)
+{
+	*cnt=count_fixups (im);
+	//printf ("*cnt=%d\n", *cnt);
+	DWORD *rt=DMALLOC(DWORD, *cnt, "fixups");
+	enum_all_fixups (im, make_array_of_fixups_callback_fn, rt);
+	//for (unsigned i=0; i<*cnt; i++)
+	//	printf ("%08X\n", rt[i]);
+	return rt;
+};	
 
 IMAGE_SECTION_HEADER* get_last_section (LOADED_IMAGE *im)
 {
@@ -305,3 +325,117 @@ void set_data_directory_entry (LOADED_IMAGE *im, unsigned no, DWORD adr, DWORD s
 	im->FileHeader->OptionalHeader.DataDirectory[no].VirtualAddress=adr;
 	im->FileHeader->OptionalHeader.DataDirectory[no].Size=sz;
 };
+
+tetrabyte PE_section_CRC32(LOADED_IMAGE *im, char *sect_name)
+{
+	IMAGE_SECTION_HEADER* sect=PE_find_section_by_name (im, sect_name);
+		
+	if (sect==NULL)
+		die ("%s() section %s not found\n", __FUNCTION__, sect_name);
+
+	return CRC32 ((byte*)(im->MappedAddress + sect->PointerToRawData), sect->SizeOfRawData, 0);
+};
+
+unsigned PE_section_count_needles(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size)
+{
+	IMAGE_SECTION_HEADER* sect=PE_find_section_by_name (im, sect_name);
+		
+	if (sect==NULL)
+		die ("%s() section %s not found\n", __FUNCTION__, sect_name);
+
+	return omemmem_count ((byte*)(im->MappedAddress + sect->PointerToRawData), sect->SizeOfRawData,
+			needle, needle_size);
+};
+
+byte* PE_section_find_needle(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, DWORD *out_RVA)
+{
+	IMAGE_SECTION_HEADER* sect=PE_find_section_by_name (im, sect_name);
+		
+	if (sect==NULL)
+		die ("%s() section %s not found\n", __FUNCTION__, sect_name);
+
+	byte *start=(byte*)(im->MappedAddress + sect->PointerToRawData);
+	byte *rt=omemmem (start, sect->SizeOfRawData, needle, needle_size);
+	if (rt && out_RVA)
+	{
+		size_t diff=rt-start;
+		//sect->PointerToRawData + diff; physical address in file
+		*out_RVA=sect->VirtualAddress + diff;
+	};
+	return rt;
+};
+
+byte* PE_section_get_ptr_in(LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, address RVA)
+{
+	// is it correct?
+	return (byte*)(im->MappedAddress + sect->PointerToRawData + RVA - sect->VirtualAddress);
+};
+
+void PE_disasm_range (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect,
+		DWORD begin_RVA, DWORD size, TrueFalseUndefined x64_code,
+		PE_section_disasm_cb_fn cb, void* cb_data)
+{
+	DWORD RVA=begin_RVA;
+	DWORD done=0;
+	byte *ptr=PE_section_get_ptr_in(im, sect, RVA);
+	Da d;
+	
+	do
+	{
+		if (Da_Da(x64_code /*x64*/, (byte*)ptr, (disas_address)RVA, &d))
+		{
+			if (cb)
+				if (cb (RVA, &d, cb_data)==false)
+					return;
+
+			ptr+=d.ins_len; RVA+=d.ins_len; done+=d.ins_len;
+		}
+		else
+		{
+			fprintf (stderr, "%s() Instruction at 0x%lx (RVA) was not disasmed\n", __FUNCTION__, RVA);
+			ptr+=1; RVA+=1; done+=1;
+		}
+	} while (done < size);
+};
+
+void PE_section_disasm (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, TrueFalseUndefined x64_code,
+		PE_section_disasm_cb_fn cb, void* cb_data)
+{
+	PE_disasm_range(im, sect, sect->VirtualAddress, sect->Misc.VirtualSize, x64_code, cb, cb_data);
+};
+
+struct RUNTIME_FUNCTION* PE_find_address_among_pdata_RUNTIME_FUNCTIONs (LOADED_IMAGE *im, DWORD a)
+{
+	IMAGE_SECTION_HEADER* sect=PE_find_section_by_name (im, ".pdata");
+
+	if (sect==NULL)
+		die ("%s() section %s not found\n", __FUNCTION__, ".pdata");
+
+	for (struct RUNTIME_FUNCTION *p=
+			(struct RUNTIME_FUNCTION*)(im->MappedAddress + sect->PointerToRawData);
+			p->FunctionStart!=0 && p->FunctionEnd!=0; p++)
+	{
+		if (a >= p->FunctionStart && a< p->FunctionEnd)
+			return p;
+	};
+	return NULL;
+};
+
+size_t *PE_section_find_needles (LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, 
+		OUT size_t *needles_total)
+{
+	IMAGE_SECTION_HEADER* sect=PE_find_section_by_name (im, sect_name);
+		
+	if (sect==NULL)
+		die ("%s() section %s not found\n", __FUNCTION__, sect_name);
+
+	byte *start=(byte*)(im->MappedAddress + sect->PointerToRawData);
+	
+	size_t* positions=find_all_needles (start, sect->SizeOfRawData, needle, needle_size, needles_total);
+
+	add_value_to_each_element_of_size_t_array (positions, *needles_total, sect->VirtualAddress);
+	
+	return positions;
+};
+
+

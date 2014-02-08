@@ -20,6 +20,8 @@
 #include <stdbool.h>
 
 #include "address.h"
+#include "fuzzybool.h"
+#include "x86_disas.h"
 
 typedef struct _PE_info
 {
@@ -58,4 +60,29 @@ void calculate_next_available_RVA_and_phys_ofs(LOADED_IMAGE *im, address *next_a
 size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics);
 void set_data_directory_entry (LOADED_IMAGE *im, unsigned no, DWORD adr, DWORD sz);
 IMAGE_SECTION_HEADER* PE_find_section_by_name (LOADED_IMAGE *im, char *name);
+tetrabyte PE_section_CRC32(LOADED_IMAGE *im, char *sect_name);
+unsigned PE_section_count_needles(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size);
+byte* PE_section_find_needle(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, 
+		DWORD *out_RVA /* may be NULL */);
+// untested
+DWORD *make_array_of_fixups (LOADED_IMAGE *im, unsigned *cnt);
+
+byte* PE_section_get_ptr_in(LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, address RVA);
+typedef bool (*PE_section_disasm_cb_fn)(address, Da*,void*);
+void PE_disasm_range (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect,
+		DWORD begin_RVA, DWORD size, TrueFalseUndefined x64_code,
+		PE_section_disasm_cb_fn cb, void* cb_data);
+void PE_section_disasm (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, TrueFalseUndefined x64_code,
+		PE_section_disasm_cb_fn cb, void* cb_data);
+
+struct RUNTIME_FUNCTION
+{
+	DWORD FunctionStart;
+	DWORD FunctionEnd;
+	DWORD UnwindInfo;
+};
+
+struct RUNTIME_FUNCTION* PE_find_address_among_pdata_RUNTIME_FUNCTIONs (LOADED_IMAGE *im, DWORD a);
+size_t *PE_section_find_needles (LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, 
+		OUT size_t *needles_total);
 

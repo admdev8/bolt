@@ -56,5 +56,5 @@ $(OUTDIR)/%.o: %.c
 
 # for tests:
 
-%.exe: %.o $(LIBRARY)
-	$(CC) $< $(CPPFLAGS_ADD) $(LIBRARY) $(OCTOTHORPE_LIBRARY_PATH)/lisp.o $(OCTOTHORPE_LIBRARY) $(PORG_LIBRARY) $(X86_DISASM_LIBRARY) -lpsapi -ldbghelp -limagehlp -o $@
+%.exe: %.o $(LIBRARY) $(OCTOTHORPE_LIBRARY) $(X86_DISASM_LIBRARY) $(PORG_LIBRARY)
+	$(CC) $< $(CPPFLAGS_ADD) $(LIBRARY) $(OCTOTHORPE_LIBRARY_PATH)/lisp.o $(OCTOTHORPE_LIBRARY_PATH)/logging.o $(OCTOTHORPE_LIBRARY) $(PORG_LIBRARY) $(X86_DISASM_LIBRARY) -lpsapi -ldbghelp -limagehlp -o $@
