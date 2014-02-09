@@ -26,6 +26,7 @@
 #include "dmalloc.h"
 #include "bitfields.h"
 #include "porg_utils.h"
+#include "ostrings.h"
 
 #define NEW_IMPORT_SECTION_NAME "newidata"
 #define DONT_RUN_TWICE "please don't run this utility twice!\n"
@@ -43,7 +44,7 @@ void PE_util_add_symbol_to_imports (char *fname, char *dll_name, char *sym_name,
 				DONT_RUN_TWICE, NEW_IMPORT_SECTION_NAME, fname);
 
 	address pnt_RVA=pnt_VA_plus_original_base - PE_get_original_base (&im);
-	address pnt_RVA_new_thunk=pnt_RVA+1;
+	address pnt_RVA_new_thunk=pnt_RVA+2;
 
 	struct PE_get_imports_info* i_tbl=PE_get_imports (&im);
 	if (i_tbl==NULL)
@@ -56,15 +57,28 @@ void PE_util_add_symbol_to_imports (char *fname, char *dll_name, char *sym_name,
 	add_DLL_and_symbol_to_imports (i_tbl, dll_name, sym_name, sym_ordinal, pnt_RVA_new_thunk);
 
 	byte* pnt_VA=(byte*)ImageRvaToVa (im.FileHeader, im.MappedAddress, pnt_RVA, NULL);
-	
-	if (*pnt_VA==0xB8 && *(pnt_VA+5)==0xFF && *(pnt_VA+6)==0xE0)
+
+#ifdef _WIN64
+	if (*pnt_VA==0xB8 && *(pnt_VA+2+sizeof(REG))==0xFF && *(pnt_VA+3+sizeof(REG))==0xE0)
+		die ("MOV RAX / JMP RAX is already present at 0x" PRI_ADR_HEX "\n"
+				DONT_RUN_TWICE, pnt_VA_plus_original_base);
+#else 
+	if (*pnt_VA==0xB8 && *(pnt+1)==0xB8 && *(pnt_VA+1+sizeof(REG))==0xFF && *(pnt_VA+2+sizeof(REG))==0xE0)
 		die ("MOV EAX / JMP EAX is already present at 0x" PRI_ADR_HEX "\n"
 				DONT_RUN_TWICE, pnt_VA_plus_original_base);
+#endif
 
+#ifdef _WIN64
+	*pnt_VA=0x48; // MOV RAX, ...
+	*(pnt_VA+1)=0xB8; 
+
+	*(pnt_VA+2+sizeof(REG))=0xFF; // JMP RAX
+	*(pnt_VA+3+sizeof(REG))=0xE0;
+#else
 	*pnt_VA=0xB8; // MOV EAX, dword32
-	*(pnt_VA+5)=0xFF; // JMP EAX
-	*(pnt_VA+6)=0xE0;
-	
+	*(pnt_VA+1+sizeof(REG))=0xFF; // JMP EAX/RAX
+	*(pnt_VA+2+sizeof(REG))=0xE0;
+#endif
 	// set code section writable
 	IMAGE_SECTION_HEADER* sect_with_pnt=ImageRvaToSection (im.FileHeader, NULL, pnt_RVA);
 	oassert(sect_with_pnt);
@@ -112,9 +126,9 @@ int main(int argc, char* argv[])
 	char *DLL_name=argv[2];
 	char *sym_name=argv[3];
 	int sym_ordinal=atoi(argv[4]);
-	DWORD fn_adr=strtol(argv[5], NULL, 0);
+	DWORD fn_adr=strtol_or_strtoll(argv[5], NULL, 0);
 
-	printf ("adding symbol %s!%s (ordinal %d) to %s at 0x%x\n", 
+	printf ("adding symbol %s!%s (ordinal %d) to %s at 0x" PRI_ADR_HEX "\n", 
 			DLL_name, sym_name, sym_ordinal, fname, fn_adr);
 	PE_util_add_symbol_to_imports (fname, DLL_name, sym_name, sym_ordinal, fn_adr);
 };
