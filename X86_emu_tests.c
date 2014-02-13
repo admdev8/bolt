@@ -40,9 +40,9 @@ void Da_emulate_tests()
 				ctx.Ecx=CL;
 				ctx.EFlags=0;
 				MC_WriteREG(mc, 0, val);
-				b=Da_Da(Fuzzy_False, (BYTE*)opcodes[f], ctx.Eip, &da);
+				b=Da_Da(Fuzzy_False, (BYTE*)opcodes[f], ctx.Eip, &da); // Eip is not set
 				oassert(b);
-				r=Da_emulate(&da, &ctx, mc, false, 0);
+				r=Da_emulate(&da, &ctx, mc, /*emulate_FS_accesses*/ false, 0);
 				oassert(r==DA_EMULATED_OK);
 				b=MC_ReadREG(mc, 0, &result);	
 				oassert(b);

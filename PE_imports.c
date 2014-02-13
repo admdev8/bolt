@@ -19,6 +19,8 @@
 #include "PE_imports.h"
 #include "memutils.h"
 #include "stuff.h"
+#include "ostrings.h"
+#include "stuff.h"
 
 struct PE_get_imports_info* PE_get_imports (LOADED_IMAGE *im)
 {
@@ -34,9 +36,8 @@ struct PE_get_imports_info* PE_get_imports (LOADED_IMAGE *im)
 	};
 
 	rt->import_descriptors_t=PE_count_import_descriptors (im);
-	rt->DLL_names=DMALLOC(char*, rt->import_descriptors_t, "char*");
-	rt->symbols=DMALLOC(byte**, rt->import_descriptors_t, "byte**");
-	rt->FirstThunk=DMALLOC(address, rt->import_descriptors_t, "address");
+	rt->dlls=DMALLOC(struct PE_get_imports_DLL_info, rt->import_descriptors_t, 
+			"struct PE_get_imports_DLL_info");
 
 	int j;
 	IMAGE_IMPORT_DESCRIPTOR *i;
@@ -44,19 +45,20 @@ struct PE_get_imports_info* PE_get_imports (LOADED_IMAGE *im)
 	{
 		address* OriginalFirstThunk_a=(address*)ImageRvaToVa (im->FileHeader, im->MappedAddress, i->OriginalFirstThunk, NULL);
 		char* name=(char*)ImageRvaToVa (im->FileHeader, im->MappedAddress, i->Name, NULL);
-		rt->DLL_names[j]=DSTRDUP(name,"char*");
-		rt->FirstThunk[j]=i->FirstThunk;
+		struct PE_get_imports_DLL_info* DLL=rt->dlls+j;
+		DLL->DLL_name=DSTRDUP(name,"char*");
+		DLL->FirstThunk=i->FirstThunk;
+		DLL->allocate_thunks=false;
 
 		unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)OriginalFirstThunk_a);
 
-		rt->symbols[j]=DMALLOC(byte*, symbols_t+1, "byte*");
-		rt->symbols[j][symbols_t]=NULL;
+		DLL->symbols=DMALLOC(byte*, symbols_t+1, "byte*");
+		DLL->symbols[symbols_t]=NULL;
 		
 		for (address *s=OriginalFirstThunk_a, si=0; *s; s++, si++)
 		{
 			byte *tmp=(byte*)ImageRvaToVa(im->FileHeader, im->MappedAddress, *s, NULL);
-			rt->symbols[j][si]=
-				DMEMDUP (tmp, strlen((char*)tmp+2)+3, "byte*");
+			DLL->symbols[si]=DMEMDUP (tmp, strlen((char*)tmp+2)+3, "byte*");
 		};
 	};
 
@@ -67,14 +69,14 @@ void PE_get_imports_info_free(struct PE_get_imports_info *i)
 {
 	for (int DLLs=0; DLLs < i->import_descriptors_t; DLLs++)
 	{
-		DFREE (i->DLL_names[DLLs]);
-		for (int s=0; i->symbols[DLLs][s]; s++)
-			DFREE(i->symbols[DLLs][s]);
-		DFREE(i->symbols[DLLs]);
+		struct PE_get_imports_DLL_info* DLL=i->dlls + DLLs;
+
+		DFREE (DLL->DLL_name);
+		for (int s=0; DLL->symbols[s]; s++)
+			DFREE(DLL->symbols[s]);
+		DFREE(DLL->symbols);
 	};
-	DFREE(i->FirstThunk);
-	DFREE(i->DLL_names);
-	DFREE(i->symbols);
+	DFREE(i->dlls);
 	DFREE(i);
 };
 
@@ -83,40 +85,48 @@ struct PE_get_imports_info* PE_get_imports_info_deep_copy(struct PE_get_imports_
 	struct PE_get_imports_info *rt;
 
 	rt=DMEMDUP (i, sizeof(struct PE_get_imports_info), "struct PE_get_imports_info");
-	rt->DLL_names=DMALLOC(char*, rt->import_descriptors_t, "char*");
-	rt->symbols=DMALLOC(byte**, rt->import_descriptors_t, "byte**");
-	rt->FirstThunk=DMEMDUP (i->FirstThunk, sizeof(address)*rt->import_descriptors_t, "address*");
-
-	for (int DLL=0; DLL < rt->import_descriptors_t; DLL++)
+	
+	for (int d=0; d < rt->import_descriptors_t; d++)
 	{
-		rt->DLL_names[DLL]=DSTRDUP (i->DLL_names[DLL], "char*");
+		struct PE_get_imports_DLL_info* DLL_d=rt->dlls + d;
+		struct PE_get_imports_DLL_info* DLL_s=i->dlls + d;
 
-		unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)i->symbols[DLL]);
-		rt->symbols[DLL]=DCALLOC(byte*, symbols_t+1, "byte*");
+		DLL_d->DLL_name=DSTRDUP (DLL_s->DLL_name, "char*");
+		unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)DLL_s->symbols);
+		DLL_d->symbols=DCALLOC(byte*, symbols_t+1, "byte*");
 
 		for (int s=0; s<symbols_t; s++)
-			rt->symbols[DLL][s]=
-				DMEMDUP(i->symbols[DLL][s], strlen ((char*)i->symbols[DLL][s]+2)+3, "byte*");
+			DLL_d->symbols[s]=
+				DMEMDUP(DLL_s->symbols[s], 
+						strlen ((char*)DLL_s->symbols[s]+2)+3, "byte*");
+		DLL_d->allocate_thunks=DLL_s->allocate_thunks;
 	};
 
 	return rt;
 };
 
-bool dll_present_in_imports (struct PE_get_imports_info *i, char *dll)
+int find_dll_in_imports (struct PE_get_imports_info *i, const char *dll)
 {
-	return find_string_in_array_of_strings(dll, i->DLL_names, i->import_descriptors_t, 
-		true, false)==-1 ? false : true;
+	for (unsigned j=0; j<i->import_descriptors_t; j++)
+	{
+		struct PE_get_imports_DLL_info *DLL=i->dlls + j;
+
+		if (stricmp(DLL->DLL_name, dll)==0)
+			return j;
+	};
+	return -1;
 };
 
 void dump_imports (struct PE_get_imports_info *i)
 {
 	printf ("start_RVA=0x" PRI_ADR_HEX "\n", i->start_RVA);
-	for (int DLL=0; DLL < i->import_descriptors_t; DLL++)
+	for (int d=0; d < i->import_descriptors_t; d++)
 	{
-		printf ("DLL name %s. FirstThunk=0x%x\n", i->DLL_names[DLL], i->FirstThunk[DLL]);
-		for (int s=0; i->symbols[DLL][s]; s++)
+		struct PE_get_imports_DLL_info* DLL=i->dlls + d;
+		printf ("DLL name %s. FirstThunk=0x" PRI_ADR_HEX "\n", DLL->DLL_name, DLL->FirstThunk);
+		for (int s=0; DLL->symbols[s]; s++)
 		{
-			byte* tmp=i->symbols[DLL][s];
+			byte* tmp=DLL->symbols[s];
 			printf ("hint=0x%x, name=%s\n", *(wyde*)tmp, (char*)tmp+2);
 		};
 		printf ("\n");
@@ -126,53 +136,39 @@ void dump_imports (struct PE_get_imports_info *i)
 // if place_thunks==true, this function ignores FirstThunk array, 
 // frees it and fills it again by new values
 // otherwise, thunks are not placed and FirstThunk are pointed to what is in PE_get_imports_info struct
-size_t PE_generate_import_table (struct PE_get_imports_info *i, bool place_thunks, 
-		byte* out, unsigned out_size)
+size_t PE_generate_import_table (struct PE_get_imports_info *i, byte* out, size_t out_size,
+		size_t *size_of_IMAGE_DIRECTORY_ENTRY_IMPORT)
 {
 	address out_buf_end_RVA=i->start_RVA + out_size;
 	size_t descriptors_size=sizeof(IMAGE_IMPORT_DESCRIPTOR) * (i->import_descriptors_t+1); // including terminator
-	if (place_thunks)
-	{
-		DFREE (i->FirstThunk);
-		i->FirstThunk=DMALLOC (address, i->import_descriptors_t, "address"); // allocate new
-	};
-	//bytefill(out, descriptors_size, 0xff);
-	// fill terminating descriptor with zeroes
-	bytefill(&((IMAGE_IMPORT_DESCRIPTOR*)out)[i->import_descriptors_t], sizeof(IMAGE_IMPORT_DESCRIPTOR), 0);
+	address cur_RVA=i->start_RVA;
+	byte* cur_ptr=out;
 	
-	address cur_RVA=i->start_RVA + descriptors_size;
-	byte* cur_ptr=out + descriptors_size;
+	address FirstThunk_cur=cur_RVA;
+	// IMAGE_IMPORT_DESCRIPTOR for each DLL will be filled later.
+	byte* desc_tbl=cur_ptr;
+	
+	// fill terminating IMAGE_IMPORT_DESCRIPTOR descriptor with zeroes
+	bzero(&((IMAGE_IMPORT_DESCRIPTOR*)desc_tbl)[i->import_descriptors_t], sizeof(IMAGE_IMPORT_DESCRIPTOR));
 
-	for (int DLL=0; DLL<i->import_descriptors_t; DLL++)
+	cur_ptr+=descriptors_size; cur_RVA+=descriptors_size;
+	*size_of_IMAGE_DIRECTORY_ENTRY_IMPORT=descriptors_size;
+
+	for (int d=0; d<i->import_descriptors_t; d++)
 	{
+		struct PE_get_imports_DLL_info* DLL=i->dlls + d;
 		// count number of hints/symbols
-		unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)i->symbols[DLL]);
+		unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)DLL->symbols);
 
-		size_t FirstThunk_a_size=(symbols_t+1) * sizeof(address);
-	
-		if (place_thunks)
-		{
-			// write new FirstThunk value
-			((IMAGE_IMPORT_DESCRIPTOR*)out)[DLL].FirstThunk=cur_RVA;
-			// update it also here:
-			i->FirstThunk[DLL]=cur_RVA;
-
-			// put FirstThunk array
-			bzero (cur_ptr, FirstThunk_a_size);
-			cur_ptr+=FirstThunk_a_size; cur_RVA+=FirstThunk_a_size;
-			oassert (cur_RVA < out_buf_end_RVA);
-		}
-		else
-			((IMAGE_IMPORT_DESCRIPTOR*)out)[DLL].FirstThunk=i->FirstThunk[DLL];
-	
 		address* table_of_pointers=(address*)cur_ptr;
 		table_of_pointers[symbols_t]=0; // terminator
 
 		// update OriginalFirstThunk
-		((IMAGE_IMPORT_DESCRIPTOR*)out)[DLL].OriginalFirstThunk=cur_RVA;
+		((IMAGE_IMPORT_DESCRIPTOR*)desc_tbl)[d].OriginalFirstThunk=cur_RVA;
 		
 		// reserve place for all pointers to symbol hints/names including terminator
-		cur_RVA+=FirstThunk_a_size; cur_ptr+=FirstThunk_a_size;
+		size_t symbols_table_size=(symbols_t+1) * sizeof(address);
+		cur_RVA+=symbols_table_size; cur_ptr+=symbols_table_size;
 		oassert (cur_RVA < out_buf_end_RVA);
 
 		// put all symbol hints/names
@@ -181,7 +177,7 @@ size_t PE_generate_import_table (struct PE_get_imports_info *i, bool place_thunk
 			// update pointer to this hint/name
 			table_of_pointers[s]=cur_RVA;
 			// put symbol hint/name
-			byte *hint_name=i->symbols[DLL][s];
+			byte *hint_name=DLL->symbols[s];
 			unsigned name_z_len_2=strlen((char*)hint_name+2)+1+2; // length including 16-bit hint and terminating zero
 			memcpy (cur_ptr, hint_name, name_z_len_2);
 			cur_ptr+=name_z_len_2; cur_RVA+=name_z_len_2;
@@ -189,52 +185,83 @@ size_t PE_generate_import_table (struct PE_get_imports_info *i, bool place_thunk
 		};
 
 		// update RVA of DLL name
-		((IMAGE_IMPORT_DESCRIPTOR*)out)[DLL].Name=cur_RVA;
+		((IMAGE_IMPORT_DESCRIPTOR*)desc_tbl)[d].Name=cur_RVA;
 		// put DLL name
-		unsigned DLL_name_z_len=strlen(i->DLL_names[DLL])+1;
-		memcpy (cur_ptr, i->DLL_names[DLL], DLL_name_z_len);
+		unsigned DLL_name_z_len=strlen(DLL->DLL_name)+1;
+		memcpy (cur_ptr, DLL->DLL_name, DLL_name_z_len);
 		cur_ptr+=DLL_name_z_len; cur_RVA+=DLL_name_z_len;
 		oassert (cur_RVA < out_buf_end_RVA);
+		((IMAGE_IMPORT_DESCRIPTOR*)desc_tbl)[d].TimeDateStamp=0;
+		((IMAGE_IMPORT_DESCRIPTOR*)desc_tbl)[d].ForwarderChain=-1;
 	};
+
+	// add FirstThunk's
+	for (int d=0; d<i->import_descriptors_t; d++)
+	{
+		struct PE_get_imports_DLL_info* DLL=i->dlls + d;
+		
+		if (DLL->allocate_thunks)
+		{
+			// count number of hints/symbols
+			unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)DLL->symbols);
+
+			size_t FirstThunk_a_size=symbols_t * sizeof(address);
+			
+			// write new FirstThunk value
+			((IMAGE_IMPORT_DESCRIPTOR*)desc_tbl)[d].FirstThunk=cur_RVA;
+			// update it also here:
+			DLL->FirstThunk=cur_RVA;
+	
+			// I don't know why this is, but it should be so
+			bytefill(cur_ptr, FirstThunk_a_size, 0xFF); 
+
+			cur_RVA+=FirstThunk_a_size; cur_ptr+=FirstThunk_a_size;
+		}
+		else
+			((IMAGE_IMPORT_DESCRIPTOR*)desc_tbl)[d].FirstThunk=DLL->FirstThunk;
+	};
+
 	return cur_RVA - i->start_RVA;
 };
 
-void add_DLL_and_symbol_to_imports (struct PE_get_imports_info *i, char *dll, char *symname, wyde hint,
-		address new_thunk)
+void add_DLL_and_symbol_to_imports (struct PE_get_imports_info *i, char *dll, char *symname, wyde hint)
 {
-	unsigned new_DLL_pos=i->import_descriptors_t;
-	i->import_descriptors_t++;
-	i->DLL_names=DREALLOC (i->DLL_names, char*, i->import_descriptors_t, "char*");
-	i->DLL_names[new_DLL_pos]=DSTRDUP(dll, "DLL name");
-	i->symbols=DREALLOC (i->symbols, byte**, i->import_descriptors_t, "byte**");
-	byte** new_symbols=DCALLOC (byte*, 2, "byte*");
-	new_symbols[0]=DCALLOC (byte, 2+strlen (symname)+1, "byte*");
-	memcpy (new_symbols[0], &hint, sizeof(wyde));
-	memcpy (new_symbols[0]+2, symname, strlen(symname));
-	i->symbols[new_DLL_pos]=new_symbols;
-	i->FirstThunk=DREALLOC (i->FirstThunk, address, i->import_descriptors_t, "address*");
-	i->FirstThunk[new_DLL_pos]=new_thunk;
-};
-
-bool PE_find_import_by_thunk(struct PE_get_imports_info *i, address val, 
-		unsigned *DLL_no, unsigned *sym_no)
-{
-	for (int DLL=0; DLL < i->import_descriptors_t; DLL++)
-	{
-		unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)i->symbols[DLL]);
-		if (VAL_IN_BOUNDS_INCL(val, i->FirstThunk[DLL], i->FirstThunk[DLL] + symbols_t*sizeof(address)))
-		{
-			*DLL_no=DLL;
-			*sym_no=(val - i->FirstThunk[DLL])/sizeof(address);
-			return true;
-		};
+	int DLL_idx=find_dll_in_imports(i, dll);
+	if (DLL_idx==-1)
+	{	// add new DLL to the table
+		DLL_idx=i->import_descriptors_t;
+		i->import_descriptors_t++;
+		i->dlls=DREALLOC (i->dlls, struct PE_get_imports_DLL_info, 
+				i->import_descriptors_t, "struct PE_get_imports_DLL_info");
+		struct PE_get_imports_DLL_info *DLL=i->dlls + DLL_idx;
+		DLL->DLL_name=DSTRDUP(dll, "DLL name");
+		DLL->symbols=DCALLOC (byte*, 1, "byte*"); // NULL as terminator
+		DLL->allocate_thunks=true;
+		// FirstThunk is NULL here
 	};
-	return false;
+	struct PE_get_imports_DLL_info *DLL=i->dlls + DLL_idx;
+	unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)DLL->symbols);
+	DLL->symbols=DREALLOC (DLL->symbols, byte*, symbols_t+2, "byte*");
+	byte** symbols=DLL->symbols;
+	symbols[symbols_t]=DCALLOC (byte, 2+strlen (symname)+1, "byte*");
+	memcpy (symbols[symbols_t], &hint, sizeof(wyde));
+	memcpy (symbols[symbols_t]+2, symname, strlen(symname));
+	symbols[symbols_t+1]=NULL; // terminator
 };
 
-address PE_find_thunk_by_import (struct PE_get_imports_info *i, unsigned DLL_no, unsigned sym_no)
+address PE_find_thunk_by_import (struct PE_get_imports_info *i, char* dll_name, char* sym_name)
 {
+	int DLL_no=find_dll_in_imports (i, dll_name);
+	oassert(DLL_no!=-1);
 	oassert(DLL_no < i->import_descriptors_t);
-	oassert(sym_no <= NULL_terminated_array_of_pointers_size((void**)i->symbols[DLL_no]));
-	return i->FirstThunk[DLL_no] + sym_no*sizeof(address);
+
+	struct PE_get_imports_DLL_info* DLL=i->dlls + DLL_no;
+	unsigned symbols_t=NULL_terminated_array_of_pointers_size((void**)DLL->symbols);
+
+	for (unsigned s=0; s<symbols_t; s++)
+		if (stricmp((char*)(DLL->symbols[s]+2), sym_name)==0)
+			return i->dlls[DLL_no].FirstThunk + s*sizeof(address);
+
+	die ("%s(): nothing found\n", __FUNCTION__);
 };
+

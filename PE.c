@@ -16,6 +16,7 @@
 #include <windows.h>
 #include "oassert.h"
 #include <dbghelp.h>
+#include <imagehlp.h>
 
 #include "porg_utils.h"
 #include "PE.h"
@@ -25,8 +26,8 @@
 
 // instead of imagehlp.h
 #define _IMAGEHLPAPI DECLSPEC_IMPORT WINAPI
-BOOL _IMAGEHLPAPI MapAndLoad(LPSTR,LPSTR,PLOADED_IMAGE,BOOL,BOOL); 
-BOOL _IMAGEHLPAPI UnMapAndLoad(PLOADED_IMAGE); 
+//BOOL _IMAGEHLPAPI MapAndLoad(LPSTR,LPSTR,PLOADED_IMAGE,BOOL,BOOL); 
+//BOOL _IMAGEHLPAPI UnMapAndLoad(PLOADED_IMAGE); 
 
 void MapAndLoad_or_die(PSTR image_name, PSTR dllpath, 
 		PLOADED_IMAGE LoadedImage, bool DotDll, bool ReadOnly)
@@ -438,4 +439,17 @@ size_t *PE_section_find_needles (LOADED_IMAGE *im, char *sect_name, byte *needle
 	return positions;
 };
 
+void PE_fix_checksum(const char *fname)
+{
+	LOADED_IMAGE im;
 
+	MapAndLoad_or_die (fname, NULL, &im, false, /* ReadOnly */ false);
+	DWORD old_checksum, new_checksum;
+	if (CheckSumMappedFile (im.MappedAddress, im.SizeOfImage, &old_checksum, &new_checksum)==NULL)
+		die ("CheckSumMappedFile() failed\n");
+
+	//printf ("im.FileHeader->OptionalHeader.CheckSum=0x%x, old_checksum=0x%x, new_checksum=0x%x\n", 
+	//	im.FileHeader->OptionalHeader.CheckSum,old_checksum, new_checksum);
+	im.FileHeader->OptionalHeader.CheckSum=new_checksum;
+	UnMapAndLoad_or_die (&im);
+};

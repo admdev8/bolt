@@ -19,6 +19,7 @@
 
 int main()
 {
+#if 0
 	byte buf[0x1000];
 	bzero(buf, sizeof(buf));
 	char* DLL_names[]={"one.dll", "two.dll", "three.dll" };
@@ -36,7 +37,8 @@ int main()
 	i.DLL_names=DLL_names;
 	i.symbols=symbols;
 
-	size_t sz=PE_generate_import_table (&i, /* place_thunks */ true, buf, sizeof(buf));
+	size_t sz=PE_generate_import_table (&i, buf, sizeof(buf));
 
 	L_print_buf(buf, sz);
+#endif
 };

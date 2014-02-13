@@ -15,13 +15,19 @@
 
 #include "PE.h"
 
+struct PE_get_imports_DLL_info
+{
+	char *DLL_name;
+	byte **symbols;
+	bool allocate_thunks;
+	address FirstThunk;
+};
+
 struct PE_get_imports_info
 {
 	address start_RVA;
 	unsigned import_descriptors_t;
-	char** DLL_names;
-	byte*** symbols;
-	address* FirstThunk; // array of RVA addresses
+	struct PE_get_imports_DLL_info* dlls;
 };
 
 unsigned PE_count_import_descriptors (LOADED_IMAGE *im);
@@ -29,12 +35,9 @@ struct PE_get_imports_info* PE_get_imports (LOADED_IMAGE *im);
 void PE_get_imports_info_free(struct PE_get_imports_info *i);
 struct PE_get_imports_info* PE_get_imports_info_deep_copy(struct PE_get_imports_info *i);
 void dump_imports (struct PE_get_imports_info *);
-size_t PE_generate_import_table (struct PE_get_imports_info *i, bool place_thunks, 
-		byte* out, unsigned out_size);
-void add_DLL_and_symbol_to_imports (struct PE_get_imports_info *i, char *dll, char *symname, wyde hint,
-		address new_thunk);
-bool PE_find_import_by_thunk(struct PE_get_imports_info *i, address val, 
-		unsigned *DLL_no, unsigned *sym_no);
-address PE_find_thunk_by_import (struct PE_get_imports_info *i, unsigned DLL_no, unsigned sym_no);
-bool dll_present_in_imports (struct PE_get_imports_info *i, char *dll);
+size_t PE_generate_import_table (struct PE_get_imports_info *i, byte* out, size_t out_size,
+		size_t *size_of_IMAGE_DIRECTORY_ENTRY_IMPORT);
+void add_DLL_and_symbol_to_imports (struct PE_get_imports_info *i, char *dll, char *symname, wyde hint);
+int find_dll_in_imports (struct PE_get_imports_info *i, const char *dll);
+address PE_find_thunk_by_import (struct PE_get_imports_info *i, char* dll_name, char* sym_name);
 

@@ -85,4 +85,5 @@ struct RUNTIME_FUNCTION
 struct RUNTIME_FUNCTION* PE_find_address_among_pdata_RUNTIME_FUNCTIONs (LOADED_IMAGE *im, DWORD a);
 size_t *PE_section_find_needles (LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, 
 		OUT size_t *needles_total);
+void PE_fix_checksum(const char *fname);
 

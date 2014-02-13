@@ -31,7 +31,7 @@ DEPFILES=$(SOURCES:.c=.d)
 OUTDIR=$(MSYSTEM)_$(bsuffix)
 OBJECTS=$(addprefix $(OUTDIR)/,$(SOURCES:.c=.o))
 LIBRARY=$(OUTDIR)\bolt.a
-TEST_SOURCES=PE_test.c tests.c PE_dump_imports.c PE_imports_test.c PE_add_import.c
+TEST_SOURCES=PE_test.c tests.c PE_dump_imports.c PE_imports_test.c PE_add_import.c PE_search_refs.c
 TEST_EXECS=$(addprefix $(OUTDIR)/,$(TEST_SOURCES:.c=.exe))
 
 all: $(OUTDIR) $(LIBRARY)($(OBJECTS)) $(TEST_EXECS)
