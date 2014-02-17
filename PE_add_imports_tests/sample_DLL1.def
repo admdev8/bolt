@@ -1,0 +1,4 @@
+LIBRARY sample_DLL1
+EXPORTS
+	func1
+	func2

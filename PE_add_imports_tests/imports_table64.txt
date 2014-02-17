@@ -1,0 +1,4 @@
+0x140001000 sample_DLL1.dll!func1
+0x140001030 sample_DLL1.dll!func2
+0x140001060 sample_DLL2.dll!func1
+0x140001090 sample_DLL2.dll!func2
