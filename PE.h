@@ -43,7 +43,7 @@ bool PE_is_PE32 (LOADED_IMAGE *im);
 IMAGE_EXPORT_DIRECTORY* PE_get_export_directory (LOADED_IMAGE *im, bool PE32_plus);
 unsigned PE_count_import_descriptors (LOADED_IMAGE *im);
 address PE_get_import_descriptor_RVA (LOADED_IMAGE *im, bool PE32_plus);
-tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus);
+tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *size);
 IMAGE_IMPORT_DESCRIPTOR* PE_get_import_descriptor (LOADED_IMAGE *im, bool PE32_plus);
 address PE_get_original_base (LOADED_IMAGE *im);
 
@@ -86,4 +86,5 @@ struct RUNTIME_FUNCTION* PE_find_address_among_pdata_RUNTIME_FUNCTIONs (LOADED_I
 size_t *PE_section_find_needles (LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, 
 		OUT size_t *needles_total);
 void PE_fix_checksum(const char *fname);
+byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_section_size);
 

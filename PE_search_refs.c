@@ -100,7 +100,13 @@ void f(LOADED_IMAGE *im, char *str)
 
 int main(int argc, char* argv[])
 {
-	oassert(argc==3);
+	if(argc!=3)
+	{
+		printf ("insufficient arguments\n");
+		for (int i=0; i<argc; i++)
+			printf ("%d:%s\n", i, argv[i]);
+		exit(0);
+	};
 	
 	LOADED_IMAGE im;
 

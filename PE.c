@@ -82,15 +82,23 @@ IMAGE_EXPORT_DIRECTORY* PE_get_export_directory (LOADED_IMAGE *im, bool PE32_plu
 		return (IMAGE_EXPORT_DIRECTORY*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, NULL);
 };
 
-tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus)
+tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *size)
 {
 	IMAGE_OPTIONAL_HEADER32* im_opt_header_32=(IMAGE_OPTIONAL_HEADER32*)&((IMAGE_NT_HEADERS32*)im->FileHeader)->OptionalHeader;
 	IMAGE_OPTIONAL_HEADER64* im_opt_header_64=(IMAGE_OPTIONAL_HEADER64*)&((IMAGE_NT_HEADERS64*)im->FileHeader)->OptionalHeader;
 
 	if (PE32_plus)
+	{
+		if (size)
+			*size=im_opt_header_64->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
 		return (tetrabyte*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_64->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress, NULL);
+	}
 	else
+	{
+		if (size)
+			*size=im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
 		return (tetrabyte*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress, NULL);
+	};
 };
 
 unsigned PE_count_import_descriptors (LOADED_IMAGE *im)
@@ -202,13 +210,13 @@ void PE_info_free (PE_info *i)
 	DFREE(i);
 };
 
-// untested
 void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* param)
 {
-	tetrabyte* fixups=PE_get_reloc_directory (im, PE_is_PE32(im));
+	tetrabyte* fixups=PE_get_reloc_directory (im, PE_is_PE32(im), NULL);
 	if (fixups==NULL)
 		return; // no fixups
 
+	unsigned n=0;
 	for (tetrabyte *p=fixups; *p; )
 	{
 		tetrabyte page_RVA=*p; p++;
@@ -219,10 +227,11 @@ void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* 
 		{
 			unsigned type=(*l)>>12;
 			unsigned offset=(*l)&0xFFF;
-			if (type==IMAGE_REL_BASED_ABSOLUTE)
+			if (type==IMAGE_REL_BASED_ABSOLUTE) // 0
 				continue;
 			//printf ("type=%d, offset (RVA)=0x%x\n", type, page_RVA+offset);
-			callback_fn(i, type, page_RVA+offset, param);
+			callback_fn(n, type, page_RVA+offset, param);
+			n++;
 		};
 		p+=(block_size - sizeof(tetrabyte)*2)/4;
 	};
@@ -230,7 +239,7 @@ void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* 
 
 static void count_fixups_callback_fn (unsigned i, byte type, address a, void *param)
 {
-	oassert(type==IMAGE_REL_BASED_HIGHLOW);
+	oassert(type==IMAGE_REL_BASED_HIGHLOW); // 3
 	(*(tetrabyte*)param)++;
 };
 
@@ -243,14 +252,12 @@ unsigned count_fixups (LOADED_IMAGE *im)
 	return cnt;
 };
 
-// untested
 static void make_array_of_fixups_callback_fn (unsigned i, byte type, address a, void *param)
 {
-	oassert(type==IMAGE_REL_BASED_HIGHLOW);
+	oassert(type==IMAGE_REL_BASED_HIGHLOW); // 3
 	((DWORD*)param)[i]=a;
 };
 
-// untested
 DWORD *make_array_of_fixups (LOADED_IMAGE *im, unsigned *cnt)
 {
 	*cnt=count_fixups (im);
@@ -453,3 +460,43 @@ void PE_fix_checksum(const char *fname)
 	im.FileHeader->OptionalHeader.CheckSum=new_checksum;
 	UnMapAndLoad_or_die (&im);
 };
+
+#define FIXUP_chunk_size 0x1000
+
+// fixups should be sorted on input!
+byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_section_size)
+{
+	//printf ("%s(fixups_t=%d)\n", __FUNCTION__, fixups_t);
+	byte* out=DCALLOC(byte, fixups_t*sizeof(DWORD), "out"); // с запасом!
+	byte* start=out;
+
+	for (size_t i=0; i<fixups_t; i++)
+	{
+		DWORD blk_RVA=*((DWORD*)out)=fixups[i]; out+=sizeof(DWORD);
+		DWORD* blk_size_to_be_set=(DWORD*)out; out+=sizeof(DWORD);
+		
+		size_t blk_size=0; // in wydes
+			
+		for (; i<fixups_t && ((fixups[i]-blk_RVA) < FIXUP_chunk_size); blk_size++, i++)
+		{
+			oassert((fixups[i]-blk_RVA) < FIXUP_chunk_size);
+			*((WORD*)out)=(IMAGE_REL_BASED_HIGHLOW << 12) | ((fixups[i]-blk_RVA)&0xFFF);
+			out+=sizeof(WORD);
+		};
+		if (i<fixups_t /* i is not accross array bounds at this moment */ && fixups[i]<blk_RVA)
+			die ("%s() fixups array is not monotonic at %d. fixups[%d]=0x%x, blk_RVA=0x%x\n", 
+					__FUNCTION__, i, i, fixups[i], blk_RVA);
+		if (blk_size&1) // odd?
+		{
+			// align at 4-bytes boundary
+			blk_size++;
+			out+=sizeof(WORD); // put empty IMAGE_REL_BASED_ABSOLUTE
+		};
+
+		*blk_size_to_be_set=blk_size*sizeof(wyde) + 2*sizeof(tetrabyte);
+	};
+	*fixup_section_size=out-start;
+	return start;
+};
+
+
