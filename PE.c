@@ -239,7 +239,11 @@ void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* 
 
 static void count_fixups_callback_fn (unsigned i, byte type, address a, void *param)
 {
+#ifdef _WIN64
+	oassert(type==IMAGE_REL_BASED_DIR64); // 10
+#else
 	oassert(type==IMAGE_REL_BASED_HIGHLOW); // 3
+#endif
 	(*(tetrabyte*)param)++;
 };
 
@@ -254,7 +258,11 @@ unsigned count_fixups (LOADED_IMAGE *im)
 
 static void make_array_of_fixups_callback_fn (unsigned i, byte type, address a, void *param)
 {
+#ifdef _WIN64
+	oassert(type==IMAGE_REL_BASED_DIR64); // 10
+#else
 	oassert(type==IMAGE_REL_BASED_HIGHLOW); // 3
+#endif
 	((DWORD*)param)[i]=a;
 };
 
@@ -480,7 +488,11 @@ byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_sec
 		for (; i<fixups_t && ((fixups[i]-blk_RVA) < FIXUP_chunk_size); blk_size++, i++)
 		{
 			oassert((fixups[i]-blk_RVA) < FIXUP_chunk_size);
+#ifdef _WIN64
+			*((WORD*)out)=(IMAGE_REL_BASED_DIR64 << 12) | ((fixups[i]-blk_RVA)&0xFFF);
+#else
 			*((WORD*)out)=(IMAGE_REL_BASED_HIGHLOW << 12) | ((fixups[i]-blk_RVA)&0xFFF);
+#endif
 			out+=sizeof(WORD);
 		};
 		if (i<fixups_t /* i is not accross array bounds at this moment */ && fixups[i]<blk_RVA)
