@@ -57,7 +57,7 @@ unsigned count_fixups (LOADED_IMAGE *im);
 IMAGE_SECTION_HEADER* get_last_section (LOADED_IMAGE *im);
 void calculate_next_available_RVA_and_phys_ofs(LOADED_IMAGE *im, address *next_available_RVA, 
 		address *next_available_phys_ofs);
-size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics);
+size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics, DWORD *out_sect_RVA);
 void set_data_directory_entry (LOADED_IMAGE *im, unsigned no, DWORD adr, DWORD sz);
 IMAGE_SECTION_HEADER* PE_find_section_by_name (LOADED_IMAGE *im, char *name);
 tetrabyte PE_section_CRC32(LOADED_IMAGE *im, char *sect_name);
@@ -87,4 +87,5 @@ size_t *PE_section_find_needles (LOADED_IMAGE *im, char *sect_name, byte *needle
 		OUT size_t *needles_total);
 void PE_fix_checksum(const char *fname);
 byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_section_size);
+IMAGE_SECTION_HEADER *PE_find_reloc_section (LOADED_IMAGE *im);
 

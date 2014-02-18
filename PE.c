@@ -101,6 +101,23 @@ tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *siz
 	};
 };
 
+IMAGE_SECTION_HEADER *PE_find_reloc_section (LOADED_IMAGE *im)
+{
+	IMAGE_OPTIONAL_HEADER32* im_opt_header_32=(IMAGE_OPTIONAL_HEADER32*)&((IMAGE_NT_HEADERS32*)im->FileHeader)->OptionalHeader;
+	IMAGE_OPTIONAL_HEADER64* im_opt_header_64=(IMAGE_OPTIONAL_HEADER64*)&((IMAGE_NT_HEADERS64*)im->FileHeader)->OptionalHeader;
+
+	DWORD reloc_dir_RVA;
+	if (PE_is_PE32(im))
+		reloc_dir_RVA=im_opt_header_64->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
+	else
+		reloc_dir_RVA=im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
+
+	for (unsigned i=0; i<im->NumberOfSections; i++)
+		if (im->Sections[i].VirtualAddress==reloc_dir_RVA)
+			return &im->Sections[i];
+	return NULL;
+};
+
 unsigned PE_count_import_descriptors (LOADED_IMAGE *im)
 {
 	unsigned rt=0;
@@ -294,19 +311,23 @@ void calculate_next_available_RVA_and_phys_ofs(LOADED_IMAGE *im, address *next_a
 		address *next_available_phys_ofs)
 {
 	IMAGE_SECTION_HEADER *last_sec=get_last_section (im);
-	*next_available_RVA=
-		align_to_boundary (last_sec->VirtualAddress + last_sec->Misc.VirtualSize, 
-				im->FileHeader->OptionalHeader.SectionAlignment);
-	*next_available_phys_ofs=
-		align_to_boundary (last_sec->PointerToRawData + last_sec->SizeOfRawData,
-				im->FileHeader->OptionalHeader.FileAlignment);
+	if (next_available_RVA)
+		*next_available_RVA=
+			align_to_boundary (last_sec->VirtualAddress + last_sec->Misc.VirtualSize, 
+					im->FileHeader->OptionalHeader.SectionAlignment);
+	if (next_available_phys_ofs)
+		*next_available_phys_ofs=
+			align_to_boundary (last_sec->PointerToRawData + last_sec->SizeOfRawData,
+					im->FileHeader->OptionalHeader.FileAlignment);
 };
 
-size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics)
+size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics, DWORD *out_sect_RVA)
 {
 	// calculate RVA for new section
 	address next_available_RVA, next_available_phys_ofs;
 	calculate_next_available_RVA_and_phys_ofs(im, &next_available_RVA, &next_available_phys_ofs);
+
+	//printf ("%s(). next_available_RVA=0x%x\n", __FUNCTION__, next_available_RVA);
 	
 	// create new PE section
 	IMAGE_SECTION_HEADER new_sect;
@@ -315,6 +336,8 @@ size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD char
 	memcpy (&new_sect.Name[0], name, 8);
 	new_sect.Misc.VirtualSize=sz;
 	new_sect.VirtualAddress=next_available_RVA;
+	if (out_sect_RVA)
+		*out_sect_RVA=next_available_RVA;
 	new_sect.PointerToRawData=next_available_phys_ofs;
 	new_sect.SizeOfRawData=align_to_boundary (sz, im->FileHeader->OptionalHeader.FileAlignment);
 	new_sect.Characteristics=characteristics;
@@ -475,23 +498,26 @@ void PE_fix_checksum(const char *fname)
 byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_section_size)
 {
 	//printf ("%s(fixups_t=%d)\n", __FUNCTION__, fixups_t);
-	byte* out=DCALLOC(byte, fixups_t*sizeof(DWORD), "out"); // с запасом!
+	byte* out=DCALLOC(byte, fixups_t*sizeof(DWORD)+(sizeof(DWORD)*2), "out"); // с запасом!
 	byte* start=out;
 
-	for (size_t i=0; i<fixups_t; i++)
+	for (size_t i=0; i<fixups_t; )
 	{
-		DWORD blk_RVA=*((DWORD*)out)=fixups[i]; out+=sizeof(DWORD);
+		// each chunk should be aligned on 4096 byte boundary. don't know why.
+		// otherwise, the image will not be loaded.
+		DWORD blk_RVA=*((DWORD*)out)=fixups[i]&0xFFFFF000; out+=sizeof(DWORD);
 		DWORD* blk_size_to_be_set=(DWORD*)out; out+=sizeof(DWORD);
 		
 		size_t blk_size=0; // in wydes
 			
 		for (; i<fixups_t && ((fixups[i]-blk_RVA) < FIXUP_chunk_size); blk_size++, i++)
 		{
-			oassert((fixups[i]-blk_RVA) < FIXUP_chunk_size);
+			WORD to_write=fixups[i]-blk_RVA;
+			oassert(to_write < FIXUP_chunk_size);
 #ifdef _WIN64
-			*((WORD*)out)=(IMAGE_REL_BASED_DIR64 << 12) | ((fixups[i]-blk_RVA)&0xFFF);
+			*((WORD*)out)=(IMAGE_REL_BASED_DIR64 << 12) | (to_write&0xFFF);
 #else
-			*((WORD*)out)=(IMAGE_REL_BASED_HIGHLOW << 12) | ((fixups[i]-blk_RVA)&0xFFF);
+			*((WORD*)out)=(IMAGE_REL_BASED_HIGHLOW << 12) | (to_write&0xFFF);
 #endif
 			out+=sizeof(WORD);
 		};
@@ -504,7 +530,6 @@ byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_sec
 			blk_size++;
 			out+=sizeof(WORD); // put empty IMAGE_REL_BASED_ABSOLUTE
 		};
-
 		*blk_size_to_be_set=blk_size*sizeof(wyde) + 2*sizeof(tetrabyte);
 	};
 	*fixup_section_size=out-start;
