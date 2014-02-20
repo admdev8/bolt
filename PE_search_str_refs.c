@@ -13,8 +13,6 @@
  *
  */
 
-// TODO: better name: PE search str refs
-
 #include <windows.h>
 #include <stdbool.h>
 #include "oassert.h"

@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
 	{
 		printf ("usage: fname.exe imports_table");
 		printf ("for example: winword.exe imports_table.txt\n");
-		printf ("imports_table.txt is a text file consisting of DLL name, symbol and address:\n");
+		printf ("imports_table.txt is a text file consisting of address, DLL and symbol names:\n");
 		printf ("0x00401234 mydll1.dll!MyFunction1\n");
 		printf ("0x00405678 mydll2.dll!MyFunction2\n");
 		printf ("etc\n");
