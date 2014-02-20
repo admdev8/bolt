@@ -365,13 +365,8 @@ void set_data_directory_entry (LOADED_IMAGE *im, unsigned no, DWORD adr, DWORD s
 	im->FileHeader->OptionalHeader.DataDirectory[no].Size=sz;
 };
 
-tetrabyte PE_section_CRC32(LOADED_IMAGE *im, char *sect_name)
+tetrabyte PE_section_CRC32(LOADED_IMAGE *im, IMAGE_SECTION_HEADER* sect)
 {
-	IMAGE_SECTION_HEADER* sect=PE_find_section_by_name (im, sect_name);
-		
-	if (sect==NULL)
-		die ("%s() section %s not found\n", __FUNCTION__, sect_name);
-
 	return CRC32 ((byte*)(im->MappedAddress + sect->PointerToRawData), sect->SizeOfRawData, 0);
 };
 

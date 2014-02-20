@@ -277,6 +277,7 @@ void X86_register_set_value (X86_register r, CONTEXT *ctx, obj *val)
         case R_R13D: ctx->R13=(ctx->R13&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
         case R_R14D: ctx->R14=(ctx->R14&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
         case R_R15D: ctx->R15=(ctx->R15&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
+        case R_RIP:  ctx->Rip=obj_get_as_octabyte (val); break;
                      // TODO: to add a lot
 #else
         case R_EAX: ctx->Eax=obj_get_as_tetrabyte (val); break;

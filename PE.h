@@ -60,7 +60,7 @@ void calculate_next_available_RVA_and_phys_ofs(LOADED_IMAGE *im, address *next_a
 size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics, DWORD *out_sect_RVA);
 void set_data_directory_entry (LOADED_IMAGE *im, unsigned no, DWORD adr, DWORD sz);
 IMAGE_SECTION_HEADER* PE_find_section_by_name (LOADED_IMAGE *im, char *name);
-tetrabyte PE_section_CRC32(LOADED_IMAGE *im, char *sect_name);
+tetrabyte PE_section_CRC32(LOADED_IMAGE *im, IMAGE_SECTION_HEADER* sect);
 unsigned PE_section_count_needles(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size);
 byte* PE_section_find_needle(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, 
 		DWORD *out_RVA /* may be NULL */);

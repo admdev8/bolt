@@ -111,6 +111,7 @@ void disasm_by_pdata(IMAGE_SECTION_HEADER* text_sect, IMAGE_SECTION_HEADER* pdat
 
 void f(char *str)
 {
+	//printf ("searching for [%s]\n", str);
 	original_base=PE_get_original_base(&im);
 	size_t str_total;
 	size_t *str_RVAs=PE_section_find_needles (&im, ".rdata", (byte*)str, strlen(str), 
