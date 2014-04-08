@@ -16,6 +16,7 @@
 #include <windows.h>
 #include <stdbool.h>
 #include "oassert.h"
+#include "ostrings.h"
 #include <dbghelp.h>
 #include <search.h>
 #include "bolt_mingw_addons.h"
@@ -30,6 +31,9 @@
 #include "memutils.h"
 
 address original_base;
+bool verbose=false, unicode=false;
+LOADED_IMAGE im;
+struct my_cb_data cb_data;
 
 struct my_cb_data
 {
@@ -45,10 +49,10 @@ struct my_cb_data
 
 static bool f1(struct my_cb_data *data, REG tmp, address a)
 {
-	//printf ("f1 (tmp=0x" PRI_ADR_HEX " a=0x" PRI_ADR_HEX ")\n", tmp, a);
+	//printf ("%s (tmp=0x" PRI_ADR_HEX " a=0x" PRI_ADR_HEX ")\n", __func__, tmp, a);
 	if (element_in_the_array_of_size_t(tmp, data->op2_can_be_address, data->address_total))
 	{
-		//printf ("found\n");
+		//printf ("%s():%d found\n", __func__, __LINE__);
 		data->str_found=true;
 		data->ins_referring_str=a;
 		return false;
@@ -60,8 +64,10 @@ bool is_value_in_op2_cb (address a, Da* d, void* void_data)
 {
 	struct my_cb_data *data=(struct my_cb_data*)void_data;
 
+	//printf ("%s():%d a=0x%x\n", __func__, __LINE__, a);
 	if (d->ins_code==I_LEA && Da_2nd_op_is_disp_only(d))
 	{
+		//printf ("%s():%d a=0x%x\n", __func__, __LINE__, a);
 		if (f1 (data, Da_2nd_op_get_disp(d), a)==false)
 			return false;
 	}
@@ -88,11 +94,6 @@ bool is_value_in_op2_cb (address a, Da* d, void* void_data)
 	return true;
 };
 
-bool verbose=false;
-//bool verbose=true;
-LOADED_IMAGE im;
-struct my_cb_data cb_data;
-
 void disasm_by_pdata(IMAGE_SECTION_HEADER* text_sect, IMAGE_SECTION_HEADER* pdata_sect)
 {
 	for (struct RUNTIME_FUNCTION *p=
@@ -101,6 +102,7 @@ void disasm_by_pdata(IMAGE_SECTION_HEADER* text_sect, IMAGE_SECTION_HEADER* pdat
 	{
 		cb_data.str_found=false; // reset at each iteration
 
+		//printf ("p->FunctionStart=0x%x\n", p->FunctionStart);
 		PE_disasm_range(&im, text_sect, p->FunctionStart, 
 				p->FunctionEnd-p->FunctionStart, Fuzzy_True, is_value_in_op2_cb, &cb_data);
 
@@ -111,11 +113,29 @@ void disasm_by_pdata(IMAGE_SECTION_HEADER* text_sect, IMAGE_SECTION_HEADER* pdat
 
 void f(char *str)
 {
-	//printf ("searching for [%s]\n", str);
+	if (verbose)
+		printf ("searching for [%s]\n", str);
 	original_base=PE_get_original_base(&im);
 	size_t str_total;
-	size_t *str_RVAs=PE_section_find_needles (&im, ".rdata", (byte*)str, strlen(str), 
-			&str_total);
+	size_t *str_RVAs;
+	size_t str_len=strlen(str);
+	
+	if (unicode)
+	{
+		size_t ustr_len;
+		byte *ustr=cvt_to_widestr_and_allocate(str, &ustr_len);
+		// not count terminating zero! user may set partial string!
+		str_RVAs=PE_section_find_needles (&im, ".rdata", ustr, ustr_len-2, &str_total);
+		DFREE(ustr);
+	}
+	else
+		str_RVAs=PE_section_find_needles (&im, ".rdata", (byte*)str, str_len, &str_total);
+
+	if (str_total==0)
+	{
+		printf ("String [%s] not found\n", str);
+		exit(0);
+	};
 
 	if (verbose)
 		for (size_t i=0; i<str_total; i++)
@@ -153,15 +173,37 @@ void f(char *str)
 
 int main(int argc, char* argv[])
 {
-	if(argc!=3)
+	printf ("Simple tool for searching for a function in PE executables which use some text string\n");
+	printf ("<dennis@yurichev.com> (%s %s)\n", __DATE__, __TIME__);
+	if(argc<3)
 	{
 		printf ("insufficient arguments\n");
+		printf ("usage: %s [--unicode] [--verbose] filename.exe text_string\n", argv[0]);
 		return 0;
 	};
-	
-	MapAndLoad_or_die (argv[1], NULL, &im, false, /* ReadOnly */ false);
 
-	f(argv[2]);
+	int current_a=1;
+
+	while (argv[current_a][0]=='-')
+	{
+		if (stricmp(argv[current_a], "--unicode")==0)
+		{
+			unicode=true;
+			current_a++;
+		};
+
+		if (stricmp(argv[current_a], "--verbose")==0)
+		{
+			verbose=true;
+			current_a++;
+		};
+	};
+	
+	MapAndLoad_or_die (argv[current_a], NULL, &im, false, /* ReadOnly */ false);
+	current_a++;
+
+	f(argv[current_a]);
+	current_a++;
 	
 	UnMapAndLoad_or_die (&im);
 

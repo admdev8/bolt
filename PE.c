@@ -416,6 +416,7 @@ void PE_disasm_range (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect,
 	
 	do
 	{
+		//printf ("%s() RVA=0x%x\n", __func__, RVA);
 		if (Da_Da(x64_code /*x64*/, (byte*)ptr, (disas_address)RVA, &d))
 		{
 			if (cb)
