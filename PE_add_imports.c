@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
 	printf ("<dennis@yurichev.com> (%s %s)\n", __DATE__, __TIME__);
 	if(argc!=3)
 	{
-		printf ("usage: fname.exe imports_table");
+		printf ("usage: fname.exe imports_table\n");
 		printf ("for example: winword.exe imports_table.txt\n");
 		printf ("imports_table.txt is a text file consisting of address, DLL and symbol names:\n");
 		printf ("0x00401234 mydll1.dll!MyFunction1\n");

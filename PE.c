@@ -312,13 +312,26 @@ void calculate_next_available_RVA_and_phys_ofs(LOADED_IMAGE *im, address *next_a
 {
 	IMAGE_SECTION_HEADER *last_sec=get_last_section (im);
 	if (next_available_RVA)
+	{
+		DWORD sect_size;
+
+		// some old Watcom compiler may set Virtual Size to 0!
+		// that's weird. use SizeOfRawData then...
+		if (last_sec->Misc.VirtualSize==0)
+			sect_size=last_sec->SizeOfRawData;
+		else
+			sect_size=last_sec->Misc.VirtualSize;
+
 		*next_available_RVA=
-			align_to_boundary (last_sec->VirtualAddress + last_sec->Misc.VirtualSize, 
+			align_to_boundary (last_sec->VirtualAddress + sect_size, 
 					im->FileHeader->OptionalHeader.SectionAlignment);
+	};
 	if (next_available_phys_ofs)
+	{
 		*next_available_phys_ofs=
 			align_to_boundary (last_sec->PointerToRawData + last_sec->SizeOfRawData,
 					im->FileHeader->OptionalHeader.FileAlignment);
+	};
 };
 
 size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics, DWORD *out_sect_RVA)
