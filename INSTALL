@@ -5,4 +5,47 @@ Libraries required:
 * porg (available at https://github.com/dennis714/porg)
 * x86_disasm (available at https://github.com/dennis714/x86_disasm)
 
-Usually built in MinGW environment, just run ./make_all.sh (or ./clean_all.sh for opposite effect).
+Use absolute paths in 'configure' script, e.g.:
+
+=================================================
+configure --enable-debug=yes 
+--with-octothorpe-include=/cygdrive/c/P/octothorpe/include 
+--with-octothorpe-lib=/cygdrive/c/P/octothorpe/build/lib
+=================================================
+
+If --with-octothorpe=DIR is set, octothorpe headers will be searched in DIR/include and library
+file in DIR/lib.
+
+Same story about other libraries.
+
+If no options supplied, headers will be searched in /usr/local/include/<LIBRARY> and library
+file in /usr/local/lib.
+
+* Recommended build:
+
+=================================================
+mkdir build
+cd build
+../configure
+make
+make check
+[sudo] make install
+=================================================
+
+Thus, the headers files are goes to /usr/local/include/bolt and library file to /usr/local/lib.
+.exe's comes to /usr/local
+
+* Debug build:
+
+=================================================
+mkdir build
+cd build
+../configure --enable-debug=yes
+make
+make check
+[sudo] make install
+=================================================
+
+* MinGW:
+
+How to set up both x86 and x64 MinGW compilers: http://yurichev.com/refs/mingw.html

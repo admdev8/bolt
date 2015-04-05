@@ -1,4 +1,0 @@
-LIBRARY sample_DLL2
-EXPORTS
-	func1
-	func2

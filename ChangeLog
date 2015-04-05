@@ -1,4 +1,8 @@
+2015-04-05  Dennis Yurichev <dennis@yurichev.com>
+
+	* Switching to GNU autotools
+
 2013-09-26  Dennis Yurichev <dennis@yurichev.com>
 
-    * This is a first public version, uploaded to github.com.
+	* This is a first public version, uploaded to github.com.
 
