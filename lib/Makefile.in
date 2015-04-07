@@ -126,7 +126,8 @@ libbolt_a_LIBADD =
 am_libbolt_a_OBJECTS = CONTEXT_utils.$(OBJEXT) PE.$(OBJEXT) \
 	PE_imports.$(OBJEXT) X86_emu.$(OBJEXT) \
 	X86_register_helpers.$(OBJEXT) bolt_stuff.$(OBJEXT) \
-	disas_utils.$(OBJEXT) memorycache.$(OBJEXT)
+	disas_utils.$(OBJEXT) memorycache.$(OBJEXT) \
+	PE_filling_code_patterns.$(OBJEXT)
 libbolt_a_OBJECTS = $(am_libbolt_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -280,7 +281,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 lib_LIBRARIES = libbolt.a
 libbolt_a_SOURCES = CONTEXT_utils.c PE.c PE_imports.c X86_emu.c X86_register_helpers.c \
-	bolt_stuff.c disas_utils.c memorycache.c
+	bolt_stuff.c disas_utils.c memorycache.c PE_filling_code_patterns.c
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 all: all-am
@@ -362,6 +363,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CONTEXT_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE_filling_code_patterns.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE_imports.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/X86_emu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/X86_register_helpers.Po@am__quote@

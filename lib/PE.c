@@ -23,6 +23,8 @@
 #include "memutils.h"
 #include "stuff.h"
 #include "dmalloc.h"
+#include "bitfields.h"
+#include "fmt_utils.h"
 
 // instead of imagehlp.h
 #define _IMAGEHLPAPI DECLSPEC_IMPORT WINAPI
@@ -545,4 +547,58 @@ byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_sec
 	return start;
 };
 
+
+bool PE_is_it_code_section (IMAGE_SECTION_HEADER *s)
+{
+	return IS_SET (s->Characteristics, IMAGE_SCN_CNT_CODE) ||
+		IS_SET (s->Characteristics, IMAGE_SCN_MEM_EXECUTE);
+};
+
+void PE_enumerate_executable_sections(LOADED_IMAGE *im, PE_enumerate_executable_sections_cb_fn cb, void* cb_data)
+{
+	for (unsigned i=0; i<im->NumberOfSections; i++)
+		if (PE_is_it_code_section (&im->Sections[i]))
+			cb (im, &im->Sections[i], cb_data);
+};
+
+// return NULL is not found
+IMAGE_SECTION_HEADER *PE_get_section_of_address(LOADED_IMAGE *im, address RVA)
+{
+	for (unsigned i=0; i<im->NumberOfSections; i++)
+	{
+		IMAGE_SECTION_HEADER *sect=&im->Sections[i];
+		if (REG_in_range2 (RVA, sect->VirtualAddress, sect->Misc.VirtualSize))
+			return sect;
+	};
+	return NULL;
+};
+
+bool PE_is_address_in_executable_section(LOADED_IMAGE *im, address RVA)
+{
+	IMAGE_SECTION_HEADER *sect=PE_get_section_of_address (im, RVA);
+
+	if (sect==NULL)
+	{
+		oassert (!"section for RVA isn't found");
+		//printf ("section for RVA (0x" PRI_ADR_HEX ") isn't found\n", RVA);
+		return false;
+	}
+
+	return PE_is_it_code_section (sect);
+};
+
+size_t PE_get_file_size_not_including_non_standard_end (LOADED_IMAGE* im)
+{
+	IMAGE_SECTION_HEADER* last_sect=get_last_section(im);
+	return last_sect->PointerToRawData + last_sect->SizeOfRawData;
+}
+
+size_t PE_get_file_size_not_including_non_standard_end_by_name (char* fname)
+{
+	LOADED_IMAGE im;
+	MapAndLoad_or_die (fname, NULL, &im, false, /* ReadOnly */ false);
+	size_t rt=PE_get_file_size_not_including_non_standard_end(&im);
+	UnMapAndLoad_or_die (&im);
+	return rt;
+};
 

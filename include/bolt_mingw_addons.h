@@ -23,12 +23,14 @@
 
 typedef ULONG_PTR KAFFINITY, *PKAFFINITY;
 
-#ifndef _WIN64
+/*
 typedef struct _M128A {
     ULONGLONG Low;
     LONGLONG High;
 } M128A, *PM128A;
+*/
 
+#ifndef _WIN64
 typedef struct _XMM_SAVE_AREA32 {
   WORD ControlWord;
   WORD StatusWord;

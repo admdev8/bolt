@@ -77,7 +77,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bolt_PROGRAMS = PE_add_imports$(EXEEXT) PE_dump_imports$(EXEEXT) \
-	PE_patcher$(EXEEXT) PE_search_str_refs$(EXEEXT)
+	PE_patcher$(EXEEXT) PE_search_str_refs$(EXEEXT) \
+	PE_filling_code_patterns_test$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -97,6 +98,12 @@ PE_add_imports_DEPENDENCIES = $(top_builddir)/lib/libbolt.a
 PE_dump_imports_SOURCES = PE_dump_imports.c
 PE_dump_imports_OBJECTS = PE_dump_imports.$(OBJEXT)
 PE_dump_imports_DEPENDENCIES = $(top_builddir)/lib/libbolt.a
+PE_filling_code_patterns_test_SOURCES =  \
+	PE_filling_code_patterns_test.c
+PE_filling_code_patterns_test_OBJECTS =  \
+	PE_filling_code_patterns_test.$(OBJEXT)
+PE_filling_code_patterns_test_DEPENDENCIES =  \
+	$(top_builddir)/lib/libbolt.a
 PE_patcher_SOURCES = PE_patcher.c
 PE_patcher_OBJECTS = PE_patcher.$(OBJEXT)
 PE_patcher_DEPENDENCIES = $(top_builddir)/lib/libbolt.a
@@ -131,9 +138,11 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = PE_add_imports.c PE_dump_imports.c PE_patcher.c \
+SOURCES = PE_add_imports.c PE_dump_imports.c \
+	PE_filling_code_patterns_test.c PE_patcher.c \
 	PE_search_str_refs.c
-DIST_SOURCES = PE_add_imports.c PE_dump_imports.c PE_patcher.c \
+DIST_SOURCES = PE_add_imports.c PE_dump_imports.c \
+	PE_filling_code_patterns_test.c PE_patcher.c \
 	PE_search_str_refs.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -264,6 +273,8 @@ PE_patcher_SOURCE = PE_patcher.c
 PE_patcher_LDADD = $(top_builddir)/lib/libbolt.a @PORG_LIBS@ @X86_DISASM_LIBS@ @OCTOTHORPE_LIBS@ -ldbghelp -limagehlp
 PE_search_str_refs_SOURCE = PE_search_str_refs.c
 PE_search_str_refs_LDADD = $(top_builddir)/lib/libbolt.a @PORG_LIBS@ @X86_DISASM_LIBS@ @OCTOTHORPE_LIBS@ -ldbghelp -limagehlp
+PE_filling_code_patterns_test_SOURCE = PE_filling_code_patterns_test.c
+PE_filling_code_patterns_test_LDADD = $(top_builddir)/lib/libbolt.a @PORG_LIBS@ @X86_DISASM_LIBS@ @OCTOTHORPE_LIBS@ -ldbghelp -limagehlp
 AM_CPPFLAGS = -I$(top_srcdir)/include
 all: all-am
 
@@ -350,6 +361,10 @@ PE_dump_imports$(EXEEXT): $(PE_dump_imports_OBJECTS) $(PE_dump_imports_DEPENDENC
 	@rm -f PE_dump_imports$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(PE_dump_imports_OBJECTS) $(PE_dump_imports_LDADD) $(LIBS)
 
+PE_filling_code_patterns_test$(EXEEXT): $(PE_filling_code_patterns_test_OBJECTS) $(PE_filling_code_patterns_test_DEPENDENCIES) $(EXTRA_PE_filling_code_patterns_test_DEPENDENCIES) 
+	@rm -f PE_filling_code_patterns_test$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(PE_filling_code_patterns_test_OBJECTS) $(PE_filling_code_patterns_test_LDADD) $(LIBS)
+
 PE_patcher$(EXEEXT): $(PE_patcher_OBJECTS) $(PE_patcher_DEPENDENCIES) $(EXTRA_PE_patcher_DEPENDENCIES) 
 	@rm -f PE_patcher$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(PE_patcher_OBJECTS) $(PE_patcher_LDADD) $(LIBS)
@@ -366,6 +381,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE_add_imports.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE_dump_imports.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE_filling_code_patterns_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE_patcher.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PE_search_str_refs.Po@am__quote@
 

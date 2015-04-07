@@ -87,4 +87,12 @@ size_t *PE_section_find_needles (LOADED_IMAGE *im, char *sect_name, byte *needle
 void PE_fix_checksum(const char *fname);
 byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_section_size);
 IMAGE_SECTION_HEADER *PE_find_reloc_section (LOADED_IMAGE *im);
+bool PE_is_it_code_section (IMAGE_SECTION_HEADER *s);
 
+typedef void (*PE_enumerate_executable_sections_cb_fn)(LOADED_IMAGE *,IMAGE_SECTION_HEADER*, void*);
+void PE_enumerate_executable_sections(LOADED_IMAGE *im, PE_enumerate_executable_sections_cb_fn cb, void* cb_data);
+
+IMAGE_SECTION_HEADER *PE_get_section_of_address(LOADED_IMAGE *im, address RVA);
+bool PE_is_address_in_executable_section(LOADED_IMAGE *im, address RVA);
+size_t PE_get_file_size_not_including_non_standard_end (LOADED_IMAGE* im);
+size_t PE_get_file_size_not_including_non_standard_end_by_name (char* fname);

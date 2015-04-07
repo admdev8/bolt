@@ -1,6 +1,17 @@
+2015-04-07  Dennis Yurichev <dennis@yurichev.com>
+
+	* New functions: PE_get_file_size_not_including_non_standard_end (),
+	PE_get_file_size_not_including_non_standard_end_by_name ().
+
+2015-04-06  Dennis Yurichev <dennis@yurichev.com>
+
+	* New functions: PE_get_section_of_address(), PE_is_address_in_executable_section(),
+	find_filling_code_patterns().
+
 2015-04-05  Dennis Yurichev <dennis@yurichev.com>
 
 	* Switching to GNU autotools
+	* New functions: PE_is_it_code_section(), PE_enumerate_executable_sections()
 
 2013-09-26  Dennis Yurichev <dennis@yurichev.com>
 
