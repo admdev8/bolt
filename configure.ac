@@ -5,7 +5,7 @@ CFLAGS="-Wall -std=c11"
 
 AC_PROG_CC
 AC_PROG_RANLIB
-AM_PROG_AR
+#AM_PROG_AR
 
 AC_CHECK_SIZEOF(size_t)
 

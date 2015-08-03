@@ -587,6 +587,7 @@ bool PE_is_address_in_executable_section(LOADED_IMAGE *im, address RVA)
 	return PE_is_it_code_section (sect);
 };
 
+// move to PE_get_info()?
 size_t PE_get_file_size_not_including_non_standard_end (LOADED_IMAGE* im)
 {
 	IMAGE_SECTION_HEADER* last_sect=get_last_section(im);

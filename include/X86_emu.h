@@ -13,6 +13,8 @@
  *
  */
 
+// this is partial user-mode x86 emulator
+
 #pragma once
 
 #include "memorycache.h"
@@ -28,6 +30,7 @@ typedef enum _Da_emulate_result
     DA_EMULATED_NOT_SUPPORTED
 } Da_emulate_result;
 
+// FIXME some functions should be static
 bool ins_traced_by_one_step(Ins_codes i);
 Da_emulate_result Da_emulate_MOV_op1_op2(Da *d, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
 Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx);
