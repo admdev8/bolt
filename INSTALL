@@ -48,4 +48,4 @@ make check
 
 * MinGW:
 
-How to set up both x86 and x64 MinGW compilers: http://yurichev.com/refs/mingw.html
+How to set up both x86 and x64 MinGW compilers: https://github.com/dennis714/octothorpe/blob/master/INSTALL.md#mingw
