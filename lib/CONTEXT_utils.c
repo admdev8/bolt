@@ -541,7 +541,7 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
     return rt;
 };
 
-void CONTEXT_set_reg (CONTEXT * ctx, X86_register r, REG v)
+void CONTEXT_set_reg (CONTEXT * ctx, enum X86_register r, REG v)
 {
     switch (r)
     {
@@ -625,7 +625,7 @@ REG CONTEXT_getAccum (CONTEXT * ctx)
 #endif
 };
 
-REG CONTEXT_get_reg (CONTEXT * ctx, X86_register r)
+REG CONTEXT_get_reg (CONTEXT * ctx, enum X86_register r)
 {
     switch (r)
     {
@@ -697,7 +697,7 @@ REG CONTEXT_get_reg (CONTEXT * ctx, X86_register r)
     };
 };
 
-address CONTEXT_calc_adr_of_op (CONTEXT * ctx, Da_op *op)
+address CONTEXT_calc_adr_of_op (CONTEXT * ctx, struct Da_op *op)
 {
     REG adr=0;
     oassert (op->type==DA_OP_TYPE_VALUE_IN_MEMORY);

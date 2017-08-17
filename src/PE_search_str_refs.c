@@ -45,7 +45,7 @@ struct my_cb_data
 
 	bool track_func_start;
 	address last_func_start;
-	Da *prev_ins;
+	struct Da *prev_ins;
 };
 
 static bool f1(struct my_cb_data *data, REG tmp, address a)
@@ -61,7 +61,7 @@ static bool f1(struct my_cb_data *data, REG tmp, address a)
 	return true;
 };
 
-bool is_value_in_op2_cb (address a, Da* d, void* void_data)
+bool is_value_in_op2_cb (address a, struct Da* d, void* void_data)
 {
 	struct my_cb_data *data=(struct my_cb_data*)void_data;
 
@@ -90,7 +90,7 @@ bool is_value_in_op2_cb (address a, Da* d, void* void_data)
 
 		// rotate last instructions
 		DFREE(data->prev_ins);
-		data->prev_ins=DMEMDUP(d, sizeof(Da), "");
+		data->prev_ins=DMEMDUP(d, sizeof(struct Da), "");
 	};
 	return true;
 };
@@ -105,7 +105,7 @@ void disasm_by_pdata(IMAGE_SECTION_HEADER* text_sect, IMAGE_SECTION_HEADER* pdat
 
 		//printf ("p->FunctionStart=0x%x\n", p->FunctionStart);
 		PE_disasm_range(&im, text_sect, p->FunctionStart, 
-				p->FunctionEnd-p->FunctionStart, Fuzzy_True, is_value_in_op2_cb, &cb_data);
+				p->FunctionEnd-p->FunctionStart, Fuzzy_True, is_value_in_op2_cb, &cb_data, /* report_error */ false);
 
 		if (cb_data.str_found)
 			printf ("0x" PRI_ADR_HEX "\n", original_base + p->FunctionStart);

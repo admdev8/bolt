@@ -78,7 +78,7 @@ AC_ARG_WITH(porg,
 CFLAGS="$CFLAGS -I$porg_include_path"
 LDFLAGS="$LDFLAGS -L$porg_lib_path"
 
-AC_CHECK_LIB([porg],[die_GetLastError],[AC_SUBST([PORG_LIBS], ["-lporg -lpsapi"])],AC_MSG_ERROR(porg library missing),[-loctothorpe -lpsapi])
+AC_CHECK_LIB([porg],[die_GetLastError],[AC_SUBST([PORG_LIBS], ["-lporg -lpsapi -lntdll -lntoskrnl"])],AC_MSG_ERROR(porg library missing),[-loctothorpe -lpsapi -lntdll -lntoskrnl])
 
 dnl default values:
 x86_disasm_include_path=/usr/local/include/x86_disasm

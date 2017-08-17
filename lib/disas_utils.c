@@ -20,7 +20,7 @@
 #include "X86_register_helpers.h"
 #include "fmt_utils.h"
 
-bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, MemoryCache *mem, 
+bool Da_op_get_value_of_op (struct Da_op *op, address * rt_adr, const CONTEXT * ctx, MemoryCache *mem, 
         const char *fname, unsigned fileline, obj *result, unsigned ins_prefixes, address FS)
 {
     bool b;
@@ -75,7 +75,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 b=MC_ReadTetrabyte (mem, *rt_adr, &out);
                 if (b)
                 {
-                    obj_tetrabyte2((uint32_t)out, result);
+                    obj_tetra2((uint32_t)out, result);
                     return true;
                 }
                 else
@@ -87,7 +87,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
                 b=MC_ReadOctabyte (mem, *rt_adr, &out);
                 if (b)
                 {
-                    obj_octabyte2((uint64_t)out, result);
+                    obj_octa2((uint64_t)out, result);
                     return true;
                 }
                 else
@@ -117,7 +117,7 @@ bool Da_op_get_value_of_op (Da_op *op, address * rt_adr, const CONTEXT * ctx, Me
     fatal_error();
 };
 
-bool Da_op_set_value_of_op (Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS) 
+bool Da_op_set_value_of_op (struct Da_op* op, obj *val, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS) 
 {
     address adr;
 
@@ -173,7 +173,7 @@ COPY_FAILED:
     return false;
 };
 
-address Da_op_calc_adr_of_op (Da_op* op, const CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
+address Da_op_calc_adr_of_op (struct Da_op* op, const CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     address adr=0;
     address rt;

@@ -6,7 +6,7 @@
  * | |_) | (_) | | |_ 
  * |_.__/ \___/|_|\__|
  *
- * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013
+ * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013-2017
  *
  * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License. 
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/.
@@ -289,7 +289,9 @@ void add_DLL_and_symbol_to_imports (struct PE_get_imports_info *i, char *dll, ch
 address PE_find_thunk_by_import (struct PE_get_imports_info *i, char* dll_name, char* sym_name)
 {
 	int DLL_no=find_dll_in_imports (i, dll_name);
-	oassert(DLL_no!=-1);
+	if (DLL_no==-1)
+		die ("%s(): can't find '%s' DLL among imports\n", __FUNCTION__, dll_name);
+
 	oassert(DLL_no < i->import_descriptors_t);
 
 	struct PE_get_imports_DLL_info* DLL=i->dlls + DLL_no;
@@ -298,6 +300,6 @@ address PE_find_thunk_by_import (struct PE_get_imports_info *i, char* dll_name, 
 		if (stricmp(DLL->symbols[s], sym_name)==0)
 			return i->dlls[DLL_no].FirstThunk + s*sizeof(address);
 
-	die ("%s(): nothing found\n", __FUNCTION__);
+	die ("%s(): can't find '%s' symbol among import\n", __FUNCTION__, sym_name);
 };
 

@@ -31,12 +31,12 @@ typedef enum _Da_emulate_result
 } Da_emulate_result;
 
 // FIXME some functions should be static
-bool ins_traced_by_one_step(Ins_codes i);
-Da_emulate_result Da_emulate_MOV_op1_op2(Da *d, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
-Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx);
-Da_emulate_result Da_emulate_CMOVcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
-Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
-Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulate_FS_accesses, address FS);
+bool ins_traced_by_one_step(enum Ins_codes i);
+Da_emulate_result Da_emulate_MOV_op1_op2(struct Da *d, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
+Da_emulate_result Da_emulate_Jcc (struct Da* d, bool cond, CONTEXT * ctx);
+Da_emulate_result Da_emulate_CMOVcc (struct Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
+Da_emulate_result Da_emulate_SETcc (struct Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS);
+Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulate_FS_accesses, address FS);
 const char* Da_emulate_result_to_string(Da_emulate_result r);
 
 /* vim: set expandtab ts=4 sw=4 : */

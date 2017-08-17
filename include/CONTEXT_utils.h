@@ -82,13 +82,13 @@ void dump_CONTEXT (fds* s, CONTEXT * ctx, bool dump_FPU, bool dump_DRx, bool dum
 bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2);
 
 void CONTEXT_set_reg (CONTEXT * ctx, unsigned idx, REG v);
-void CONTEXT_set_reg_STx (CONTEXT * ctx, X86_register r, double v);
+void CONTEXT_set_reg_STx (CONTEXT * ctx, enum X86_register r, double v);
 void CONTEXT_setDRx_and_DR7 (CONTEXT * ctx, int bp_i, REG a);
 void CONTEXT_clear_bp_in_DR7 (CONTEXT * ctx, int bp_n);
 void CONTEXT_setAccum (CONTEXT * ctx, REG v);
 REG CONTEXT_getAccum (CONTEXT * ctx);
-REG CONTEXT_get_reg (CONTEXT * ctx, X86_register r);
-address CONTEXT_calc_adr_of_op (CONTEXT * ctx, Da_op *op);
+REG CONTEXT_get_reg (CONTEXT * ctx, enum X86_register r);
+address CONTEXT_calc_adr_of_op (CONTEXT * ctx, struct Da_op *op);
 void CONTEXT_dump_DRx(fds *s, CONTEXT *ctx);
 
 bool is_NZ_cond (const CONTEXT * ctx);

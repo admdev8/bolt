@@ -1,3 +1,8 @@
+2015-08-18  Dennis Yurichev <dennis@yurichev.com>
+
+	* New functions: my_strnicmp()
+	New util: PE_remove_import.c
+
 2015-04-07  Dennis Yurichev <dennis@yurichev.com>
 
 	* New functions: PE_get_file_size_not_including_non_standard_end (),

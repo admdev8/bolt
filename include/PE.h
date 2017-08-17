@@ -42,7 +42,7 @@ bool PE_is_PE32 (LOADED_IMAGE *im);
 IMAGE_EXPORT_DIRECTORY* PE_get_export_directory (LOADED_IMAGE *im, bool PE32_plus);
 unsigned PE_count_import_descriptors (LOADED_IMAGE *im);
 address PE_get_import_descriptor_RVA (LOADED_IMAGE *im, bool PE32_plus);
-tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *size);
+tetra* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *size);
 IMAGE_IMPORT_DESCRIPTOR* PE_get_import_descriptor (LOADED_IMAGE *im, bool PE32_plus);
 address PE_get_original_base (LOADED_IMAGE *im);
 
@@ -59,7 +59,7 @@ void calculate_next_available_RVA_and_phys_ofs(LOADED_IMAGE *im, address *next_a
 size_t add_PE_section_at_end(LOADED_IMAGE *im, char* name, SIZE_T sz, DWORD characteristics, DWORD *out_sect_RVA);
 void set_data_directory_entry (LOADED_IMAGE *im, unsigned no, DWORD adr, DWORD sz);
 IMAGE_SECTION_HEADER* PE_find_section_by_name (LOADED_IMAGE *im, char *name);
-tetrabyte PE_section_CRC32(LOADED_IMAGE *im, IMAGE_SECTION_HEADER* sect);
+tetra PE_section_CRC32(LOADED_IMAGE *im, IMAGE_SECTION_HEADER* sect);
 unsigned PE_section_count_needles(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size);
 byte* PE_section_find_needle(LOADED_IMAGE *im, char *sect_name, byte *needle, size_t needle_size, 
 		DWORD *out_RVA /* may be NULL */);
@@ -67,12 +67,12 @@ byte* PE_section_find_needle(LOADED_IMAGE *im, char *sect_name, byte *needle, si
 DWORD *make_array_of_fixups (LOADED_IMAGE *im, unsigned *cnt);
 
 byte* PE_section_get_ptr_in(LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, address RVA);
-typedef bool (*PE_section_disasm_cb_fn)(address, Da*,void*);
+typedef bool (*PE_section_disasm_cb_fn)(address, struct Da*,void*);
 void PE_disasm_range (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect,
 		DWORD begin_RVA, DWORD size, TrueFalseUndefined x64_code,
-		PE_section_disasm_cb_fn cb, void* cb_data);
+		PE_section_disasm_cb_fn cb, void* cb_data, bool report_error);
 void PE_section_disasm (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, TrueFalseUndefined x64_code,
-		PE_section_disasm_cb_fn cb, void* cb_data);
+		PE_section_disasm_cb_fn cb, void* cb_data, bool report_error);
 
 struct RUNTIME_FUNCTION
 {

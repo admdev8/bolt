@@ -20,40 +20,40 @@
 #include "FPU_stuff.h"
 #include "CONTEXT_utils.h"
 
-void X86_register_get_value (X86_register r, const CONTEXT *ctx, obj* out)
+void X86_register_get_value (enum X86_register r, const CONTEXT *ctx, obj* out)
 {
     unsigned idx;
 
     switch (r)
     {
 #ifdef _WIN64
-        case R_RAX: obj_octabyte2 ((uint64_t)ctx->Rax, out); break;
-        case R_RBX: obj_octabyte2 ((uint64_t)ctx->Rbx, out); break;
-        case R_RCX: obj_octabyte2 ((uint64_t)ctx->Rcx, out); break;
-        case R_RDX: obj_octabyte2 ((uint64_t)ctx->Rdx, out); break;
-        case R_RSI: obj_octabyte2 ((uint64_t)ctx->Rsi, out); break;
-        case R_RDI: obj_octabyte2 ((uint64_t)ctx->Rdi, out); break;
-        case R_RSP: obj_octabyte2 ((uint64_t)ctx->Rsp, out); break;
-        case R_RBP: obj_octabyte2 ((uint64_t)ctx->Rbp, out); break;
-        case R_RIP: obj_octabyte2 ((uint64_t)ctx->Rip, out); break;
+        case R_RAX: obj_octa2 ((uint64_t)ctx->Rax, out); break;
+        case R_RBX: obj_octa2 ((uint64_t)ctx->Rbx, out); break;
+        case R_RCX: obj_octa2 ((uint64_t)ctx->Rcx, out); break;
+        case R_RDX: obj_octa2 ((uint64_t)ctx->Rdx, out); break;
+        case R_RSI: obj_octa2 ((uint64_t)ctx->Rsi, out); break;
+        case R_RDI: obj_octa2 ((uint64_t)ctx->Rdi, out); break;
+        case R_RSP: obj_octa2 ((uint64_t)ctx->Rsp, out); break;
+        case R_RBP: obj_octa2 ((uint64_t)ctx->Rbp, out); break;
+        case R_RIP: obj_octa2 ((uint64_t)ctx->Rip, out); break;
 
-        case R_R8:  obj_octabyte2 ((uint64_t)ctx->R8, out); break;
-        case R_R9:  obj_octabyte2 ((uint64_t)ctx->R9, out); break;
-        case R_R10: obj_octabyte2 ((uint64_t)ctx->R10, out); break;
-        case R_R11: obj_octabyte2 ((uint64_t)ctx->R11, out); break;
-        case R_R12: obj_octabyte2 ((uint64_t)ctx->R12, out); break;
-        case R_R13: obj_octabyte2 ((uint64_t)ctx->R13, out); break;
-        case R_R14: obj_octabyte2 ((uint64_t)ctx->R14, out); break;
-        case R_R15: obj_octabyte2 ((uint64_t)ctx->R15, out); break;
+        case R_R8:  obj_octa2 ((uint64_t)ctx->R8, out); break;
+        case R_R9:  obj_octa2 ((uint64_t)ctx->R9, out); break;
+        case R_R10: obj_octa2 ((uint64_t)ctx->R10, out); break;
+        case R_R11: obj_octa2 ((uint64_t)ctx->R11, out); break;
+        case R_R12: obj_octa2 ((uint64_t)ctx->R12, out); break;
+        case R_R13: obj_octa2 ((uint64_t)ctx->R13, out); break;
+        case R_R14: obj_octa2 ((uint64_t)ctx->R14, out); break;
+        case R_R15: obj_octa2 ((uint64_t)ctx->R15, out); break;
 
-        case R_R8D:  obj_tetrabyte2 ((uint32_t)(ctx->R8 & 0xFFFFFFFF), out); break;
-        case R_R9D:  obj_tetrabyte2 ((uint32_t)(ctx->R9 & 0xFFFFFFFF), out); break;
-        case R_R10D: obj_tetrabyte2 ((uint32_t)(ctx->R10 & 0xFFFFFFFF), out); break;
-        case R_R11D: obj_tetrabyte2 ((uint32_t)(ctx->R11 & 0xFFFFFFFF), out); break;
-        case R_R12D: obj_tetrabyte2 ((uint32_t)(ctx->R12 & 0xFFFFFFFF), out); break;
-        case R_R13D: obj_tetrabyte2 ((uint32_t)(ctx->R13 & 0xFFFFFFFF), out); break;
-        case R_R14D: obj_tetrabyte2 ((uint32_t)(ctx->R14 & 0xFFFFFFFF), out); break;
-        case R_R15D: obj_tetrabyte2 ((uint32_t)(ctx->R15 & 0xFFFFFFFF), out); break;
+        case R_R8D:  obj_tetra2 ((uint32_t)(ctx->R8 & 0xFFFFFFFF), out); break;
+        case R_R9D:  obj_tetra2 ((uint32_t)(ctx->R9 & 0xFFFFFFFF), out); break;
+        case R_R10D: obj_tetra2 ((uint32_t)(ctx->R10 & 0xFFFFFFFF), out); break;
+        case R_R11D: obj_tetra2 ((uint32_t)(ctx->R11 & 0xFFFFFFFF), out); break;
+        case R_R12D: obj_tetra2 ((uint32_t)(ctx->R12 & 0xFFFFFFFF), out); break;
+        case R_R13D: obj_tetra2 ((uint32_t)(ctx->R13 & 0xFFFFFFFF), out); break;
+        case R_R14D: obj_tetra2 ((uint32_t)(ctx->R14 & 0xFFFFFFFF), out); break;
+        case R_R15D: obj_tetra2 ((uint32_t)(ctx->R15 & 0xFFFFFFFF), out); break;
 
         case R_R8W:  obj_wyde2 ((uint16_t)(ctx->R8 & 0xFFFF), out); break;
         case R_R9W:  obj_wyde2 ((uint16_t)(ctx->R9 & 0xFFFF), out); break;
@@ -73,15 +73,15 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, obj* out)
         case R_R14L: obj_byte2 ((uint8_t)(ctx->R14 & 0xFF), out); break;
         case R_R15L: obj_byte2 ((uint8_t)(ctx->R15 & 0xFF), out); break;
 
-        case R_EAX: obj_tetrabyte2 ((uint32_t)(ctx->Rax & 0xFFFFFFFF), out); break;
-        case R_EBX: obj_tetrabyte2 ((uint32_t)(ctx->Rbx & 0xFFFFFFFF), out); break;
-        case R_ECX: obj_tetrabyte2 ((uint32_t)(ctx->Rcx & 0xFFFFFFFF), out); break;
-        case R_EDX: obj_tetrabyte2 ((uint32_t)(ctx->Rdx & 0xFFFFFFFF), out); break;
-        case R_ESI: obj_tetrabyte2 ((uint32_t)(ctx->Rsi & 0xFFFFFFFF), out); break;
-        case R_EDI: obj_tetrabyte2 ((uint32_t)(ctx->Rdi & 0xFFFFFFFF), out); break;
-        case R_EBP: obj_tetrabyte2 ((uint32_t)(ctx->Rbp & 0xFFFFFFFF), out); break;
-        case R_ESP: obj_tetrabyte2 ((uint32_t)(ctx->Rsp & 0xFFFFFFFF), out); break;
-        case R_EIP: obj_tetrabyte2 ((uint32_t)(ctx->Rip & 0xFFFFFFFF), out); break;
+        case R_EAX: obj_tetra2 ((uint32_t)(ctx->Rax & 0xFFFFFFFF), out); break;
+        case R_EBX: obj_tetra2 ((uint32_t)(ctx->Rbx & 0xFFFFFFFF), out); break;
+        case R_ECX: obj_tetra2 ((uint32_t)(ctx->Rcx & 0xFFFFFFFF), out); break;
+        case R_EDX: obj_tetra2 ((uint32_t)(ctx->Rdx & 0xFFFFFFFF), out); break;
+        case R_ESI: obj_tetra2 ((uint32_t)(ctx->Rsi & 0xFFFFFFFF), out); break;
+        case R_EDI: obj_tetra2 ((uint32_t)(ctx->Rdi & 0xFFFFFFFF), out); break;
+        case R_EBP: obj_tetra2 ((uint32_t)(ctx->Rbp & 0xFFFFFFFF), out); break;
+        case R_ESP: obj_tetra2 ((uint32_t)(ctx->Rsp & 0xFFFFFFFF), out); break;
+        case R_EIP: obj_tetra2 ((uint32_t)(ctx->Rip & 0xFFFFFFFF), out); break;
 
         case R_AL: obj_byte2 ((uint8_t)(ctx->Rax & 0xFF), out); break;
         case R_AH: obj_byte2 ((uint8_t)((ctx->Rax>>8) & 0xFF), out); break;
@@ -107,15 +107,15 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, obj* out)
         case R_DIL: obj_byte2 ((uint8_t)(ctx->Rdi & 0xFF), out); break;
         case R_BPL: obj_byte2 ((uint8_t)(ctx->Rbp & 0xFF), out); break;
 #else
-        case R_EAX: obj_tetrabyte2 ((uint32_t)ctx->Eax, out); break;
-        case R_EBX: obj_tetrabyte2 ((uint32_t)ctx->Ebx, out); break;
-        case R_ECX: obj_tetrabyte2 ((uint32_t)ctx->Ecx, out); break;
-        case R_EDX: obj_tetrabyte2 ((uint32_t)ctx->Edx, out); break;
-        case R_ESI: obj_tetrabyte2 ((uint32_t)ctx->Esi, out); break;
-        case R_EDI: obj_tetrabyte2 ((uint32_t)ctx->Edi, out); break;
-        case R_EBP: obj_tetrabyte2 ((uint32_t)ctx->Ebp, out); break;
-        case R_ESP: obj_tetrabyte2 ((uint32_t)ctx->Esp, out); break;
-        case R_EIP: obj_tetrabyte2 ((uint32_t)ctx->Eip, out); break;
+        case R_EAX: obj_tetra2 ((uint32_t)ctx->Eax, out); break;
+        case R_EBX: obj_tetra2 ((uint32_t)ctx->Ebx, out); break;
+        case R_ECX: obj_tetra2 ((uint32_t)ctx->Ecx, out); break;
+        case R_EDX: obj_tetra2 ((uint32_t)ctx->Edx, out); break;
+        case R_ESI: obj_tetra2 ((uint32_t)ctx->Esi, out); break;
+        case R_EDI: obj_tetra2 ((uint32_t)ctx->Edi, out); break;
+        case R_EBP: obj_tetra2 ((uint32_t)ctx->Ebp, out); break;
+        case R_ESP: obj_tetra2 ((uint32_t)ctx->Esp, out); break;
+        case R_EIP: obj_tetra2 ((uint32_t)ctx->Eip, out); break;
 
         case R_AL: obj_byte2 ((uint8_t)(ctx->Eax&0xFF), out); break;
         case R_AH: obj_byte2 ((uint8_t)((ctx->Eax>>8)&0xFF), out); break;
@@ -209,7 +209,7 @@ void X86_register_get_value (X86_register r, const CONTEXT *ctx, obj* out)
     };
 };
 
-uint64_t X86_register_get_value_as_u64 (X86_register r, const CONTEXT *ctx)
+uint64_t X86_register_get_value_as_u64 (enum X86_register r, const CONTEXT *ctx)
 {
     uint64_t rt;
 
@@ -219,7 +219,7 @@ uint64_t X86_register_get_value_as_u64 (X86_register r, const CONTEXT *ctx)
     return rt;
 };
 
-void X86_register_set_value (X86_register r, CONTEXT *ctx, obj *val)
+void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
 {
     unsigned idx;
 

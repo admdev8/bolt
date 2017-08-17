@@ -220,18 +220,18 @@ void rebuild_fixups_section()
 	printf ("Rebuilding FIXUPs section...\n");
 	//printf ("fixups_t=%d\n", fixups_t);
 	// remove all -1 from array
-	tetrabyte_array_remove_all_values((tetrabyte**)&fixups, UINT32_MAX, &fixups_t, true /*call_drealloc*/);
+	tetra_array_remove_all_values((tetra**)&fixups, UINT32_MAX, &fixups_t, true /*call_drealloc*/);
 	//printf ("new fixups_t=%d\n", fixups_t);
 	//for (unsigned i=0; i<fixups_t; i++)
 	//	printf ("new fixup 0x%x\n", fixups[i]);
 
-	qsort (fixups, fixups_t, sizeof(DWORD), &qsort_compare_tetrabytes);
+	qsort (fixups, fixups_t, sizeof(DWORD), &qsort_compare_tetras);
 
 	size_t fixup_section_size;
 	byte* fixups_section=generate_fixups_section (fixups, fixups_t, &fixup_section_size);
 
 	size_t reloc_directory_size;
-	tetrabyte *reloc_directory=PE_get_reloc_directory (&im, PE_is_PE32(&im), &reloc_directory_size);
+	tetra *reloc_directory=PE_get_reloc_directory (&im, PE_is_PE32(&im), &reloc_directory_size);
 
 	// including case of absent fixups table
 	if (fixup_section_size > reloc_directory_size)

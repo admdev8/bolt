@@ -72,10 +72,10 @@ static __thread unsigned minimal_table_size;
 
 struct my_cb_data
 {
-	X86_register last_LEA_op0;
+	enum X86_register last_LEA_op0;
 	REG last_LEA_op1;
 	address first_MOV;
-	X86_register first_MOV_op0_reg;
+	enum X86_register first_MOV_op0_reg;
 	bool last_MOV_was_OK;
 	int64_t last_MOV_adr_disp;
 	obj* table;
@@ -83,7 +83,7 @@ struct my_cb_data
 	uint32_t total;
 };
 
-static void add_to_list_and_update (struct my_cb_data *data, Da *d, REG VA_overriden_op1)
+static void add_to_list_and_update (struct my_cb_data *data, struct Da *d, REG VA_overriden_op1)
 {
 	// it's VA for x86, but RVA for x64! dunno why
 #ifndef _WIN64
@@ -97,11 +97,11 @@ static void add_to_list_and_update (struct my_cb_data *data, Da *d, REG VA_overr
 			return;
 	};
 	// N.B.: FIXUPs can be there!
-	Da_op op0=d->op[0];
+	struct Da_op op0=d->op[0];
 
 	// add cons (tuple) to list: (offset, value)
 	REG ofs=op0.adr.adr_disp;
-	data->table=add_to_list(data->table, cons(obj_octabyte(ofs), obj_REG(VA_overriden_op1)));
+	data->table=add_to_list(data->table, cons(obj_octa(ofs), obj_REG(VA_overriden_op1)));
 	data->last_MOV_was_OK=true;
 	data->last_MOV_adr_disp=op0.adr.adr_disp;
 	data->total++;
@@ -155,9 +155,9 @@ static void save_and_reset(struct my_cb_data *data)
 	bzero (data, sizeof (struct my_cb_data));
 };
 
-static void handle_MOV (struct my_cb_data *data, address a, Da* d, REG overriden_op1)
+static void handle_MOV (struct my_cb_data *data, address a, struct Da* d, REG overriden_op1)
 {
-	Da_op op0=d->op[0];
+	struct Da_op op0=d->op[0];
 
 	if (data->last_MOV_was_OK==false)
 	{
@@ -177,11 +177,12 @@ static void handle_MOV (struct my_cb_data *data, address a, Da* d, REG overriden
 	};
 };
 
-static bool disasm_cb (address a, Da* d, void* void_data)
+static bool disasm_cb (address a, struct Da* d, void* void_data)
 {
+	//printf ("%s() begin, a=0x%x\n", __func__, a);
 	struct my_cb_data *data=(struct my_cb_data*)void_data;
-	Da_op *op0=&d->op[0];
-	Da_op *op1=&d->op[1];
+	struct Da_op *op0=&d->op[0];
+	struct Da_op *op1=&d->op[1];
 
 	// skip compiler noise MOV:
 	if (Da_is_ins_and_2ops_are (d, I_MOV, DA_OP_TYPE_REGISTER, DA_OP_TYPE_ANY /* wildcard */))
@@ -202,8 +203,11 @@ static bool disasm_cb (address a, Da* d, void* void_data)
 		  mov     [rax+3C0h], rcx
 		*/
 		if (value_not_in2 (op0->reg, data->first_MOV_op0_reg, data->last_LEA_op0))
+		{
+			//printf ("%s() line %d\n", __func__, __LINE__);
 			// fine, handle it
 			return true;
+		};
 		// fallthrough otherwise
 	}
 
@@ -217,6 +221,7 @@ static bool disasm_cb (address a, Da* d, void* void_data)
 		// save register & value
 		data->last_LEA_op0=op0->reg;
 		data->last_LEA_op1=op1->adr.adr_disp;
+		//printf ("%s() line %d\n", __func__, __LINE__);
 		return true;
 	}
 
@@ -229,6 +234,7 @@ static bool disasm_cb (address a, Da* d, void* void_data)
 	if (Da_is_ins_and_2ops_are (d, I_MOV, DA_OP_TYPE_VALUE_IN_MEMORY, DA_OP_TYPE_VALUE))
 	{
 		handle_MOV (data, a, d, obj_get_as_REG(&op1->val._v));
+		//printf ("%s() line %d\n", __func__, __LINE__);
 		return true;
 	}
 
@@ -241,18 +247,20 @@ static bool disasm_cb (address a, Da* d, void* void_data)
 	    op1->reg==data->last_LEA_op0)
 	{
 		handle_MOV (data, a, d, data->last_LEA_op1);
+		//printf ("%s() line %d\n", __func__, __LINE__);
 		return true;
 	}
 
 	save_and_reset(data); // some other instruction encountered
 
+	//printf ("%s() line %d\n", __func__, __LINE__);
 	return true; // always continue
 };
 
 static void exec_sections_cb_fn (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *s, void *cb_data_unused)
 {
 	//printf ("working out section %s\n", s->Name);
-	PE_section_disasm (im, s, Fuzzy_Undefined /* x64_code */, &disasm_cb, &cb_data);
+	PE_section_disasm (im, s, Fuzzy_Undefined /* x64_code */, &disasm_cb, &cb_data, /* report_error */ false);
 };
 
 // FIXME better name please!

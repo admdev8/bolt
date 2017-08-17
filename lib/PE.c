@@ -31,6 +31,18 @@
 //BOOL _IMAGEHLPAPI MapAndLoad(LPSTR,LPSTR,PLOADED_IMAGE,BOOL,BOOL); 
 //BOOL _IMAGEHLPAPI UnMapAndLoad(PLOADED_IMAGE); 
 
+int my_strnicmp(const char* s1, const char* s2, size_t len)
+{
+	for (int i=0; i<len; i++)
+	{
+		if (s1[i]!=s2[i])
+			return s1[i]-s2[i];
+		if (s1[i]==0)
+			return 0;
+	};
+	return 0;
+};
+
 void MapAndLoad_or_die(PSTR image_name, PSTR dllpath, 
 		PLOADED_IMAGE LoadedImage, bool DotDll, bool ReadOnly)
 {
@@ -84,7 +96,7 @@ IMAGE_EXPORT_DIRECTORY* PE_get_export_directory (LOADED_IMAGE *im, bool PE32_plu
 		return (IMAGE_EXPORT_DIRECTORY*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, NULL);
 };
 
-tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *size)
+tetra* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *size)
 {
 	IMAGE_OPTIONAL_HEADER32* im_opt_header_32=(IMAGE_OPTIONAL_HEADER32*)&((IMAGE_NT_HEADERS32*)im->FileHeader)->OptionalHeader;
 	IMAGE_OPTIONAL_HEADER64* im_opt_header_64=(IMAGE_OPTIONAL_HEADER64*)&((IMAGE_NT_HEADERS64*)im->FileHeader)->OptionalHeader;
@@ -93,13 +105,13 @@ tetrabyte* PE_get_reloc_directory (LOADED_IMAGE *im, bool PE32_plus, size_t *siz
 	{
 		if (size)
 			*size=im_opt_header_64->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
-		return (tetrabyte*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_64->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress, NULL);
+		return (tetra*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_64->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress, NULL);
 	}
 	else
 	{
 		if (size)
 			*size=im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
-		return (tetrabyte*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress, NULL);
+		return (tetra*)ImageRvaToVa (im->FileHeader, im->MappedAddress, im_opt_header_32->DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress, NULL);
 	};
 };
 
@@ -231,18 +243,18 @@ void PE_info_free (PE_info *i)
 
 void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* param)
 {
-	tetrabyte* fixups=PE_get_reloc_directory (im, PE_is_PE32(im), NULL);
+	tetra* fixups=PE_get_reloc_directory (im, PE_is_PE32(im), NULL);
 	if (fixups==NULL)
 		return; // no fixups
 
 	unsigned n=0;
-	for (tetrabyte *p=fixups; *p; )
+	for (tetra *p=fixups; *p; )
 	{
-		tetrabyte page_RVA=*p; p++;
-		tetrabyte block_size=*p; p++;
+		tetra page_RVA=*p; p++;
+		tetra block_size=*p; p++;
 		//printf ("fixup block. page_RVA=0x%x, block_size=0x%x\n", page_RVA, block_size);
 		wyde *l; unsigned i;
-		for (l=(wyde*)p, i=0; i<(block_size - sizeof(tetrabyte)*2)/2; l++, i++)
+		for (l=(wyde*)p, i=0; i<(block_size - sizeof(tetra)*2)/2; l++, i++)
 		{
 			unsigned type=(*l)>>12;
 			unsigned offset=(*l)&0xFFF;
@@ -252,7 +264,7 @@ void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* 
 			callback_fn(n, type, page_RVA+offset, param);
 			n++;
 		};
-		p+=(block_size - sizeof(tetrabyte)*2)/4;
+		p+=(block_size - sizeof(tetra)*2)/4;
 	};
 };
 
@@ -263,12 +275,12 @@ static void count_fixups_callback_fn (unsigned i, byte type, address a, void *pa
 #else
 	oassert(type==IMAGE_REL_BASED_HIGHLOW); // 3
 #endif
-	(*(tetrabyte*)param)++;
+	(*(tetra*)param)++;
 };
 
 unsigned count_fixups (LOADED_IMAGE *im)
 {
-	tetrabyte cnt=0;
+	tetra cnt=0;
 
 	enum_all_fixups (im, count_fixups_callback_fn, &cnt);
 
@@ -304,7 +316,7 @@ IMAGE_SECTION_HEADER* get_last_section (LOADED_IMAGE *im)
 IMAGE_SECTION_HEADER* PE_find_section_by_name (LOADED_IMAGE *im, char *name)
 {
 	for (unsigned i=0; i<im->NumberOfSections; i++)
-		if (strnicmp(name, (char*)im->Sections[i].Name, 8)==0)
+		if (my_strnicmp(name, (char*)im->Sections[i].Name, 8)==0)
 			return &im->Sections[i];
 	return NULL; // not found
 };
@@ -380,7 +392,7 @@ void set_data_directory_entry (LOADED_IMAGE *im, unsigned no, DWORD adr, DWORD s
 	im->FileHeader->OptionalHeader.DataDirectory[no].Size=sz;
 };
 
-tetrabyte PE_section_CRC32(LOADED_IMAGE *im, IMAGE_SECTION_HEADER* sect)
+tetra PE_section_CRC32(LOADED_IMAGE *im, IMAGE_SECTION_HEADER* sect)
 {
 	return CRC32 ((byte*)(im->MappedAddress + sect->PointerToRawData), sect->SizeOfRawData, 0);
 };
@@ -422,12 +434,12 @@ byte* PE_section_get_ptr_in(LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, addres
 
 void PE_disasm_range (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect,
 		DWORD begin_RVA, DWORD size, TrueFalseUndefined x64_code,
-		PE_section_disasm_cb_fn cb, void* cb_data)
+		PE_section_disasm_cb_fn cb, void* cb_data, bool report_error)
 {
 	DWORD RVA=begin_RVA;
 	DWORD done=0;
 	byte *ptr=PE_section_get_ptr_in(im, sect, RVA);
-	Da d;
+	struct Da d;
 	
 	do
 	{
@@ -442,16 +454,17 @@ void PE_disasm_range (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect,
 		}
 		else
 		{
-			fprintf (stderr, "%s() Instruction at 0x%lx (RVA) was not disasmed\n", __FUNCTION__, RVA);
+			if (report_error)
+				fprintf (stderr, "%s() Instruction at 0x%lx (RVA) was not disasmed\n", __FUNCTION__, RVA);
 			ptr+=1; RVA+=1; done+=1;
 		}
 	} while (done < size);
 };
 
 void PE_section_disasm (LOADED_IMAGE *im, IMAGE_SECTION_HEADER *sect, TrueFalseUndefined x64_code,
-		PE_section_disasm_cb_fn cb, void* cb_data)
+		PE_section_disasm_cb_fn cb, void* cb_data, bool report_error)
 {
-	PE_disasm_range(im, sect, sect->VirtualAddress, sect->Misc.VirtualSize, x64_code, cb, cb_data);
+	PE_disasm_range(im, sect, sect->VirtualAddress, sect->Misc.VirtualSize, x64_code, cb, cb_data, report_error);
 };
 
 struct RUNTIME_FUNCTION* PE_find_address_among_pdata_RUNTIME_FUNCTIONs (LOADED_IMAGE *im, DWORD a)
@@ -541,7 +554,7 @@ byte* generate_fixups_section (DWORD *fixups, size_t fixups_t, size_t *fixup_sec
 			blk_size++;
 			out+=sizeof(WORD); // put empty IMAGE_REL_BASED_ABSOLUTE
 		};
-		*blk_size_to_be_set=blk_size*sizeof(wyde) + 2*sizeof(tetrabyte);
+		*blk_size_to_be_set=blk_size*sizeof(wyde) + 2*sizeof(tetra);
 	};
 	*fixup_section_size=out-start;
 	return start;

@@ -24,6 +24,7 @@ file in /usr/local/lib.
 * Recommended build:
 
 =================================================
+autoreconf --install
 mkdir build
 cd build
 ../configure
@@ -38,6 +39,7 @@ Thus, the headers files are goes to /usr/local/include/bolt and library file to 
 * Debug build:
 
 =================================================
+autoreconf --install
 mkdir build
 cd build
 ../configure --enable-debug=yes

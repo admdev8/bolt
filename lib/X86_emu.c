@@ -54,7 +54,7 @@ void set_ZF (CONTEXT * ctx, obj* res)
     set_or_clear_flag (ctx, FLAG_ZF, obj_is_zero(res));
 };
 
-octabyte get_sign_bit (int value_width_in_bits)
+octa get_sign_bit (int value_width_in_bits)
 {
     switch (value_width_in_bits)
     {
@@ -67,7 +67,7 @@ octabyte get_sign_bit (int value_width_in_bits)
     };
 };
 
-octabyte get_mask (int value_width_in_bits)
+octa get_mask (int value_width_in_bits)
 {
     switch (value_width_in_bits)
     {
@@ -89,9 +89,9 @@ static enum obj_type bit_width_to_obj_type (unsigned width_in_bits)
         case 16:
             return OBJ_WYDE;
         case 32:
-            return OBJ_TETRABYTE;
+            return OBJ_TETRA;
         case 64:
-            return OBJ_OCTABYTE;
+            return OBJ_OCTA;
         default:
             oassert(0);
     };
@@ -127,7 +127,7 @@ bool DO_POP (CONTEXT * ctx, MemoryCache *mem, REG *outval)
     return true;
 };
 
-Da_emulate_result Da_emulate_MOV_op1_op2(Da* d, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
+Da_emulate_result Da_emulate_MOV_op1_op2(struct Da* d, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     obj tmp; // we can't allocate it dynamically, it's high performance code after all!
     tmp.t=OBJ_NONE;
@@ -177,7 +177,7 @@ exit:
     return r;
 };
 
-Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx)
+Da_emulate_result Da_emulate_Jcc (struct Da* d, bool cond, CONTEXT * ctx)
 {
     if (cond)
         CONTEXT_set_PC(ctx, obj_get_as_REG(&d->op[0].val._v));
@@ -186,7 +186,7 @@ Da_emulate_result Da_emulate_Jcc (Da* d, bool cond, CONTEXT * ctx)
     return DA_EMULATED_OK;
 };
 
-Da_emulate_result Da_emulate_CMOVcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
+Da_emulate_result Da_emulate_CMOVcc (struct Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     if (cond)
         return Da_emulate_MOV_op1_op2(d, ctx, mem, ins_prefixes, FS);
@@ -197,7 +197,7 @@ Da_emulate_result Da_emulate_CMOVcc (Da* d, bool cond, CONTEXT * ctx, MemoryCach
     };
 };
 
-Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
+Da_emulate_result Da_emulate_SETcc (struct Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     obj dst;
 
@@ -211,7 +211,7 @@ Da_emulate_result Da_emulate_SETcc (Da* d, bool cond, CONTEXT * ctx, MemoryCache
     return DA_EMULATED_OK;
 };
 
-bool ins_traced_by_one_step(Ins_codes i)
+bool ins_traced_by_one_step(enum Ins_codes i)
 {
     switch (i)
     {
@@ -227,7 +227,7 @@ bool ins_traced_by_one_step(Ins_codes i)
     };
 };
 
-Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulate_FS_accesses, address FS)
+Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulate_FS_accesses, address FS)
 {
 #ifdef _WIN64
     return DA_NOT_EMULATED;
@@ -302,7 +302,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                 if (DO_POP(ctx, mem, &val)==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 obj v;
-                obj_tetrabyte2 (val, &v);
+                obj_tetra2 (val, &v);
                 Da_op_set_value_of_op (&d->op[0], &v, ctx, mem, d->prefix_codes, FS);
                 goto add_to_PC_and_return_OK;
             };
@@ -514,7 +514,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                 if (d->ins_code==I_ADD || d->ins_code==I_ADC)
                     set_or_clear_flag (ctx, FLAG_CF, obj_compare (&res_sum, &rt1)==-1); // res_sum < rt1
 
-                octabyte tmp=((zero_extend_to_REG(&rt1) ^ zero_extend_to_REG(&rt2) ^ 
+                octa tmp=((zero_extend_to_REG(&rt1) ^ zero_extend_to_REG(&rt2) ^ 
                             get_sign_bit (d->op[0].value_width_in_bits)) & 
                         (zero_extend_to_REG(&res_sum) ^ zero_extend_to_REG(&rt1))) 
                     & 
@@ -654,7 +654,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
 
                 if (d->ins_code==I_SBB)
                 {
-                    int tmp=(obj_compare (&rt1, &res)==-1 /* rt1<res */) || (CF && obj_get_as_tetrabyte(&rt2)==0xffffffff);
+                    int tmp=(obj_compare (&rt1, &res)==-1 /* rt1<res */) || (CF && obj_get_as_tetra(&rt2)==0xffffffff);
                     set_or_clear_flag (ctx, FLAG_CF, tmp);
                 }
                 else
@@ -663,8 +663,8 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                         set_or_clear_flag (ctx, FLAG_CF, obj_compare (&rt1, &rt2)==-1); /* rt1<rt2 */
                 };
 
-                octabyte tmp=((zero_extend_to_octabyte(&rt1) ^ zero_extend_to_octabyte(&rt2)) & 
-                        (zero_extend_to_octabyte(&res) ^ zero_extend_to_octabyte(&rt1))) &
+                octa tmp=((zero_extend_to_octa(&rt1) ^ zero_extend_to_octa(&rt2)) & 
+                        (zero_extend_to_octa(&res) ^ zero_extend_to_octa(&rt1))) &
                     get_sign_bit (d->op[0].value_width_in_bits);
                 set_or_clear_flag (ctx, FLAG_OF, tmp);
 
@@ -769,7 +769,7 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
             {
                 address a=(address)Da_op_calc_adr_of_op(&d->op[1], ctx, mem, d->prefix_codes, FS);
                 obj val;
-                obj_tetrabyte2(a, &val);
+                obj_tetra2(a, &val);
                 b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS);
                 if (b==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
@@ -804,9 +804,9 @@ Da_emulate_result Da_emulate(Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulat
                     unsigned new_CF;
 
                     if (d->ins_code==I_SHR || d->ins_code==I_SAR)
-                        new_CF=(zero_extend_to_octabyte(&op1) >> (obj_get_as_byte (&op2) - 1)) & 1;
+                        new_CF=(zero_extend_to_octa(&op1) >> (obj_get_as_byte (&op2) - 1)) & 1;
                     else // SHL
-                        new_CF=(zero_extend_to_octabyte(&op1) >> (obj_width_in_bits(&op1) - obj_get_as_byte (&op2))) & 1;
+                        new_CF=(zero_extend_to_octa(&op1) >> (obj_width_in_bits(&op1) - obj_get_as_byte (&op2))) & 1;
 
                     obj new_op1;
 
