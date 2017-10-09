@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include "oassert.h"
 #include <dbghelp.h>
-#include "bolt_mingw_addons.h"
 #include "memutils.h"
 #include "PE.h"
 #include "PE_imports.h"
@@ -36,8 +35,9 @@
 #include "x86.h"
 #include "dmalloc.h"
 #include "fmt_utils.h"
-#include <getopt.h>
-#include <unistd.h>
+#include "files.h"
+//#include <getopt.h>
+//#include <unistd.h>
 
 #define DONT_RUN_TWICE "please don't run this utility twice!"
 #define NEW_IMPORT_SECTION_NAME ".idata2"
@@ -259,7 +259,7 @@ void rebuild_fixups_section()
 		// copy new fixup section
 		memcpy (reloc_directory, fixups_section, fixup_section_size);
 /*
- * FIXME: if to uncomment, the image will not load
+ * FIXME: if uncommented, the image will not load
  IMAGE_SECTION_HEADER *reloc_section=PE_find_reloc_section (&im);
  if (reloc_section==NULL)
  die ("Fatal error: can't find section devoted to FIXUPs\n");
@@ -272,7 +272,7 @@ void rebuild_fixups_section()
 
 void help_and_exit()
 {
-	printf ("usage: fname.exe [OPTIONS] imports_table\n");
+	printf ("usage: [OPTIONS] fname.exe imports_table\n");
 	printf ("for example: winword.exe imports_table.txt\n");
 	printf ("imports_table.txt is a text file consisting of address, DLL and symbol names:\n");
 	printf ("0x00401234 mydll1.dll!MyFunction1\n");
@@ -288,6 +288,7 @@ void help_and_exit()
 char *fname_exe;
 char *fname_imports_table;
 
+#if 0
 // copypasted from http://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
 void set_options_or_die(int argc, char* argv[])
 {
@@ -344,13 +345,39 @@ void set_options_or_die(int argc, char* argv[])
   printf ("fname_imports_table=%s\n", fname_imports_table);
 */
 };
+#endif
 
 int main(int argc, char* argv[])
 {
 	printf ("Simple tool for adding symbols to PE executable import table\n");
 	printf ("<dennis@yurichev.com> (%s %s)\n", __DATE__, __TIME__);
 
-	set_options_or_die (argc, argv);
+	//set_options_or_die (argc, argv);
+
+	if (argc<3)
+		help_and_exit();
+
+	int current_a=1;
+
+	while (argv[current_a][0]=='-')
+	{
+		if (stricmp(argv[current_a], "--force")==0)
+		{
+			force_flag=1;
+			current_a++;
+		};
+
+		if (stricmp(argv[current_a], "--no-copyright")==0)
+		{
+			add_copyright_flag=0;
+			current_a++;
+		};
+	};
+
+	fname_exe=argv[current_a];
+	current_a++;
+	fname_imports_table=argv[current_a];
+	current_a++;
 
 	load_imports_table (fname_imports_table);
 
@@ -361,7 +388,7 @@ int main(int argc, char* argv[])
 	{
 		if (force_flag)
 		{
-			truncate(fname_exe, filesize_should_be);
+			my_truncate_or_die(fname_exe, filesize_should_be);
 			printf ("Warning: file %s truncated to %d, dropping non-standard ending.\n", 
 				fname_exe, filesize_should_be);
 		}

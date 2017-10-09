@@ -19,7 +19,6 @@
 #include "ostrings.h"
 #include <dbghelp.h>
 #include <search.h>
-#include "bolt_mingw_addons.h"
 #include "rbtree.h"
 #include "PE.h"
 #include "stuff.h"
@@ -30,11 +29,6 @@
 #include "x86.h"
 #include "memutils.h"
 #include "fmt_utils.h"
-
-address original_base;
-bool verbose=false, unicode=false;
-LOADED_IMAGE im;
-struct my_cb_data cb_data;
 
 struct my_cb_data
 {
@@ -47,6 +41,11 @@ struct my_cb_data
 	address last_func_start;
 	struct Da *prev_ins;
 };
+
+address original_base;
+bool verbose=false, unicode=false;
+LOADED_IMAGE im;
+struct my_cb_data cb_data;
 
 static bool f1(struct my_cb_data *data, REG tmp, address a)
 {

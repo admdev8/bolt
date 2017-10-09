@@ -23,8 +23,6 @@
 #include "strbuf.h"
 #include "logging.h"
 
-#include <config.h> // BOLT_DEBUG here
-
 // Rationale: x86 emu testing mode should be supported (DryRunFlush())
 
 // change both if need

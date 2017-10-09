@@ -17,7 +17,7 @@
 #include "dmalloc.h"
 #include "rbtree.h"
 #include "stuff.h"
-#include "mem_utils.h"
+#include "porg_mem_utils.h"
 #include "oassert.h"
 #include "fmt_utils.h"
 

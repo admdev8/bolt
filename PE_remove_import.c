@@ -18,7 +18,6 @@
 #include "oassert.h"
 #include <dbghelp.h>
 #include <search.h>
-#include "bolt_mingw_addons.h"
 #include "rbtree.h"
 #include "PE.h"
 #include "stuff.h"

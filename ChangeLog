@@ -1,3 +1,7 @@
+2017-10-09  Dennis Yurichev <dennis@yurichev.com>
+
+	* No more autotools and getopt
+
 2015-08-18  Dennis Yurichev <dennis@yurichev.com>
 
 	* New functions: my_strnicmp()

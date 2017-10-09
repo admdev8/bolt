@@ -13,6 +13,7 @@
  *
  */
 
+#include "bolt_addons.h"
 #include "oassert.h"
 #include "stuff.h"
 #include "bolt_stuff.h"

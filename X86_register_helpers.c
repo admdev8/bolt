@@ -16,7 +16,6 @@
 #include "oassert.h"
 #include <stdio.h>
 #include "X86_register_helpers.h"
-#include "bolt_mingw_addons.h"
 #include "FPU_stuff.h"
 #include "CONTEXT_utils.h"
 

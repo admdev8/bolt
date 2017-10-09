@@ -14,7 +14,6 @@
  */
 
 #include <windows.h>
-#include "bolt_mingw_addons.h"
 #include "memorycache.h"
 
 PNT_TIB get_TIB (HANDLE THDL);

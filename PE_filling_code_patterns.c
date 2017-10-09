@@ -19,7 +19,6 @@
 #include "ostrings.h"
 #include <dbghelp.h>
 #include <search.h>
-#include "bolt_mingw_addons.h"
 #include "rbtree.h"
 #include "PE.h"
 #include "stuff.h"
@@ -63,13 +62,6 @@
   mov     [rax+0B8h], rcx
 */
 
-static __thread LOADED_IMAGE *im;
-static __thread struct my_cb_data cb_data;
-static __thread address original_base;
-static __thread obj* tables=NULL;
-static __thread bool ptrs_to_exec_sections;
-static __thread unsigned minimal_table_size;
-
 struct my_cb_data
 {
 	enum X86_register last_LEA_op0;
@@ -82,6 +74,14 @@ struct my_cb_data
 	struct my_range offsets;
 	uint32_t total;
 };
+
+// FIXME: TLS
+static LOADED_IMAGE *im;
+static struct my_cb_data cb_data;
+static address original_base;
+static obj* tables=NULL;
+static bool ptrs_to_exec_sections;
+static unsigned minimal_table_size;
 
 static void add_to_list_and_update (struct my_cb_data *data, struct Da *d, REG VA_overriden_op1)
 {

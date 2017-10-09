@@ -1,3 +1,7 @@
 *.swp
 *blotters*
 *~
+*.obj
+*.exe
+*.lib
+

@@ -16,10 +16,7 @@
 #pragma once
 
 #include <windows.h>
-#include <ntdef.h>
-
-// absent in MinGW
-#ifndef _MSC_VER
+//#include <ntdef.h>
 
 typedef ULONG_PTR KAFFINITY, *PKAFFINITY;
 
@@ -93,7 +90,5 @@ typedef enum _THREADINFOCLASS {        //        Query    Set        Notes
 } THREADINFOCLASS;
 
 #define _NTNATIVE_SELECT_NT(exp) exp
-
-#endif // _MSC_VER
 
 /* vim: set expandtab ts=4 sw=4 : */

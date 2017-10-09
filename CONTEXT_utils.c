@@ -27,7 +27,7 @@
 static unsigned FPU_STx_reg_to_phys_reg(const CONTEXT *ctx, unsigned STx_reg)
 {
     oassert(STx_reg<8);
-    unsigned top=FPU_TOP(ctx->FloatSave.StatusWord);
+    unsigned top=FPU_TOP(ctx->FltSave.StatusWord);
     //return (STx_reg+top)&7; // addition by modulo 8
     return STx_reg;
 };
@@ -36,7 +36,7 @@ static unsigned FPU_get_tag_from_tagword(const CONTEXT *ctx, unsigned STx_reg)
 {
     oassert(STx_reg<8);
     unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, STx_reg);
-    wyde tagword=ctx->FloatSave.TagWord;
+    wyde tagword=ctx->FltSave.TagWord;
     unsigned tag=(tagword>>(phys_reg*2))&3;
     return tag;
 };
@@ -45,7 +45,7 @@ static unsigned FPU_get_tag_from_tagword(const CONTEXT *ctx, unsigned STx_reg)
 XMM_SAVE_AREA32* get_XMM_SAVE_AREA32 (CONTEXT *ctx)
 {
 #ifdef _WIN64
-    return &ctx->FloatSave;
+    return &ctx->FltSave;
 #else    
     return (XMM_SAVE_AREA32*)ctx->ExtendedRegisters;
 #endif    
@@ -63,8 +63,8 @@ void _FPU_set_tag(CONTEXT *ctx, unsigned reg, unsigned type)
     oassert(reg<8);
     unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, reg);
     unsigned pos=phys_reg*2;
-    ctx->FloatSave.TagWord&=~(3<<pos);
-    ctx->FloatSave.TagWord|=type<<pos;
+    ctx->FltSave.TagWord&=~(3<<pos);
+    ctx->FltSave.TagWord|=type<<pos;
 };
 #endif
 
@@ -73,9 +73,9 @@ double get_STx (const CONTEXT *ctx, unsigned reg)
     oassert(reg<8);
     //unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, reg);
 #ifdef _WIN64
-    return cvt80to64((byte*)&ctx->FloatSave.FloatRegisters[reg]);
+    return cvt80to64((byte*)&ctx->FltSave.FloatRegisters[reg]);
 #else    
-    return cvt80to64((byte*)&ctx->FloatSave.RegisterArea[reg*10]);
+    return cvt80to64((byte*)&ctx->FltSave.RegisterArea[reg*10]);
 #endif    
 };
 
@@ -596,9 +596,9 @@ void CONTEXT_set_reg_STx (CONTEXT * ctx, unsigned idx, double v)
     //unsigned phys_reg=FPU_STx_reg_to_phys_reg(ctx, idx);
 
 #ifdef _WIN64
-    cvt64to80(v, (byte*)&ctx->FloatSave.FloatRegisters[idx]);
+    cvt64to80(v, (byte*)&ctx->FltSave.FloatRegisters[idx]);
 #else
-    cvt64to80(v, (byte*)&ctx->FloatSave.RegisterArea[idx*10]);
+    cvt64to80(v, (byte*)&ctx->FltSave.RegisterArea[idx*10]);
 #endif
 };
 
@@ -695,6 +695,7 @@ REG CONTEXT_get_reg (CONTEXT * ctx, enum X86_register r)
         oassert (!"register isn't implemented");
         break;
     };
+    return 0; //make compiler happy
 };
 
 address CONTEXT_calc_adr_of_op (CONTEXT * ctx, struct Da_op *op)
@@ -726,7 +727,7 @@ static const char* FPU_tags[]={ "NonZero", "Zero", "NaN", "Empty" };
 
 static void dump_FPU_tag_word(fds* s, CONTEXT *ctx)
 {
-    wyde tagword=ctx->FloatSave.TagWord;
+    wyde tagword=ctx->FltSave.TagWord;
     L_fds (s, "FPU TagWord=0x%x ", tagword);
     for (int ST=0; ST<8; ST++)
     {
@@ -743,14 +744,14 @@ void dump_FPU (fds* s, CONTEXT *ctx)
     strbuf sb_FCW=STRBUF_INIT;
     strbuf sb_FSW=STRBUF_INIT;
     
-    if (ctx->FloatSave.TagWord==0xFFFF)
+    if (ctx->FltSave.TagWord==0xFFFF)
         return;
 
-    FCW_to_str(ctx->FloatSave.ControlWord, &sb_FCW);
-    FSW_to_str(ctx->FloatSave.StatusWord, &sb_FSW);
+    FCW_to_str(ctx->FltSave.ControlWord, &sb_FCW);
+    FSW_to_str(ctx->FltSave.StatusWord, &sb_FSW);
 
-    L_fds (s, "FPU ControlWord=%s (0x%x)\n", sb_FCW.buf, ctx->FloatSave.ControlWord);
-    L_fds (s, "FPU StatusWord=%s (0x%x)\n", sb_FSW.buf, ctx->FloatSave.StatusWord);
+    L_fds (s, "FPU ControlWord=%s (0x%x)\n", sb_FCW.buf, ctx->FltSave.ControlWord);
+    L_fds (s, "FPU StatusWord=%s (0x%x)\n", sb_FSW.buf, ctx->FltSave.StatusWord);
 #ifdef THIS_CODE_IS_NOT_WORKING
     dump_FPU_tag_word(s, ctx);
 #endif    
@@ -766,9 +767,9 @@ void dump_FPU (fds* s, CONTEXT *ctx)
 #endif        
 
 #ifdef _WIN64
-        BYTE *b=(BYTE*)&ctx->FloatSave.FloatRegisters[ST];
+        BYTE *b=(BYTE*)&ctx->FltSave.FloatRegisters[ST];
 #else            
-        BYTE *b=(BYTE*)&ctx->FloatSave.RegisterArea[ST*10];
+        BYTE *b=(BYTE*)&ctx->FltSave.RegisterArea[ST*10];
 #endif            
         double a=get_STx(ctx, ST);
 

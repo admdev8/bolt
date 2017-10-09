@@ -16,7 +16,7 @@
 #include <windows.h>
 #include "oassert.h"
 #include <dbghelp.h>
-#include <imagehlp.h>
+//#include <imagehlp.h>
 
 #include "porg_utils.h"
 #include "PE.h"
@@ -30,18 +30,6 @@
 #define _IMAGEHLPAPI DECLSPEC_IMPORT WINAPI
 //BOOL _IMAGEHLPAPI MapAndLoad(LPSTR,LPSTR,PLOADED_IMAGE,BOOL,BOOL); 
 //BOOL _IMAGEHLPAPI UnMapAndLoad(PLOADED_IMAGE); 
-
-int my_strnicmp(const char* s1, const char* s2, size_t len)
-{
-	for (int i=0; i<len; i++)
-	{
-		if (s1[i]!=s2[i])
-			return s1[i]-s2[i];
-		if (s1[i]==0)
-			return 0;
-	};
-	return 0;
-};
 
 void MapAndLoad_or_die(PSTR image_name, PSTR dllpath, 
 		PLOADED_IMAGE LoadedImage, bool DotDll, bool ReadOnly)

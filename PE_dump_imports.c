@@ -17,7 +17,6 @@
 #include <stdbool.h>
 #include "oassert.h"
 #include <dbghelp.h>
-#include "bolt_mingw_addons.h"
 #include "memutils.h"
 #include "PE.h"
 #include "stuff.h"
