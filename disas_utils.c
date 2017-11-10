@@ -141,11 +141,11 @@ bool Da_op_set_value_of_op (struct Da_op* op, obj *val, CONTEXT * ctx, MemoryCac
                         goto COPY_FAILED;
                     return true;
                 case 32:
-                    if (MC_WriteTetrabyte (mem, adr, obj_get_as_tetrabyte(val))==false)
+                    if (MC_WriteTetrabyte (mem, adr, obj_get_as_tetra(val))==false)
                         goto COPY_FAILED;
                     return true;
                 case 64:
-                    if (MC_WriteOctabyte (mem, adr, obj_get_as_octabyte(val))==false)
+                    if (MC_WriteOctabyte (mem, adr, obj_get_as_octa(val))==false)
                         goto COPY_FAILED;
                     return true;
                 case 128:

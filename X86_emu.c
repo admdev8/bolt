@@ -229,9 +229,6 @@ bool ins_traced_by_one_step(enum Ins_codes i)
 
 Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulate_FS_accesses, address FS)
 {
-#ifdef _WIN64
-    return DA_NOT_EMULATED;
-#endif        
     //bool SF=IS_SET(ctx->EFlags, FLAG_SF);
     //bool OF=IS_SET(ctx->EFlags, FLAG_OF);
     //bool ZF=IS_SET(ctx->EFlags, FLAG_ZF);
@@ -302,7 +299,7 @@ Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool
                 if (DO_POP(ctx, mem, &val)==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 obj v;
-                obj_tetra2 (val, &v);
+                obj_REG2 (val, &v);
                 Da_op_set_value_of_op (&d->op[0], &v, ctx, mem, d->prefix_codes, FS);
                 goto add_to_PC_and_return_OK;
             };
@@ -536,6 +533,7 @@ Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool
                     return DA_EMULATED_CANNOT_READ_MEMORY;
 
                 obj_NOT(&rt1, &res);
+		// according to intel manuals, NOT not affects any flags
 
                 if (Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS))
                     goto add_to_PC_and_return_OK;
@@ -654,7 +652,7 @@ Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool
 
                 if (d->ins_code==I_SBB)
                 {
-                    int tmp=(obj_compare (&rt1, &res)==-1 /* rt1<res */) || (CF && obj_get_as_tetra(&rt2)==0xffffffff);
+                    int tmp=(obj_compare (&rt1, &res)==-1 /* rt1<res */) || (CF && obj_get_as_REG(&rt2)==(REG)-1);
                     set_or_clear_flag (ctx, FLAG_CF, tmp);
                 }
                 else
@@ -769,7 +767,7 @@ Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool
             {
                 address a=(address)Da_op_calc_adr_of_op(&d->op[1], ctx, mem, d->prefix_codes, FS);
                 obj val;
-                obj_tetra2(a, &val);
+                obj_REG2(a, &val);
                 b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS);
                 if (b==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;

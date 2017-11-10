@@ -49,7 +49,7 @@ typedef struct _MemoryCache
     address last_ptr_idx;
     bool last_ptr_idx_present;
     bool dont_read_from_quicksilver_places;
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
     bool testing;
     BYTE *testing_memory;
     SIZE_T testing_memory_size;
@@ -61,7 +61,7 @@ void MC_mark_as_to_be_flushed(MemoryCache* mc, address idx);
 bool MC_LoadPageForAddress (MemoryCache* mc, address);
 
 MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places);
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_memory_size);
 #endif
 void MC_MemoryCache_dtor(MemoryCache* mc, bool check_unflushed_elements);

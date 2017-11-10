@@ -214,7 +214,7 @@ uint64_t X86_register_get_value_as_u64 (enum X86_register r, const CONTEXT *ctx)
 
     obj val;
     X86_register_get_value (r, ctx, &val);
-    rt=zero_extend_to_octabyte (&val);
+    rt=zero_extend_to_octa (&val);
     return rt;
 };
 
@@ -268,26 +268,34 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
             break;
 
 #ifdef _WIN64
-        case R_R8D:  ctx->R8= (ctx->R8&0xFFFFFFFF00000000)  | (obj_get_as_tetrabyte (val)); break;
-        case R_R9D:  ctx->R9= (ctx->R9&0xFFFFFFFF00000000)  | (obj_get_as_tetrabyte (val)); break;
-        case R_R10D: ctx->R10=(ctx->R10&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
-        case R_R11D: ctx->R11=(ctx->R11&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
-        case R_R12D: ctx->R12=(ctx->R12&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
-        case R_R13D: ctx->R13=(ctx->R13&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
-        case R_R14D: ctx->R14=(ctx->R14&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
-        case R_R15D: ctx->R15=(ctx->R15&0xFFFFFFFF00000000) | (obj_get_as_tetrabyte (val)); break;
-        case R_RIP:  ctx->Rip=obj_get_as_octabyte (val); break;
-                     // TODO: to add a lot
+        case R_RAX: ctx->Rax=obj_get_as_octa (val); break;
+        case R_RBX: ctx->Rbx=obj_get_as_octa (val); break;
+        case R_RCX: ctx->Rcx=obj_get_as_octa (val); break;
+        case R_RDX: ctx->Rdx=obj_get_as_octa (val); break;
+        case R_RSI: ctx->Rsi=obj_get_as_octa (val); break;
+        case R_RDI: ctx->Rdi=obj_get_as_octa (val); break;
+        case R_RBP: ctx->Rbp=obj_get_as_octa (val); break;
+        case R_RSP: ctx->Rsp=obj_get_as_octa (val); break;
+        case R_R8D:  ctx->R8= (ctx->R8&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); break;
+        case R_R9D:  ctx->R9= (ctx->R9&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); break;
+        case R_R10D: ctx->R10=(ctx->R10&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+        case R_R11D: ctx->R11=(ctx->R11&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+        case R_R12D: ctx->R12=(ctx->R12&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+        case R_R13D: ctx->R13=(ctx->R13&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+        case R_R14D: ctx->R14=(ctx->R14&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+        case R_R15D: ctx->R15=(ctx->R15&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+        case R_RIP:  ctx->Rip=obj_get_as_octa (val); break;
+                     // TODO: to add more
 #else
-        case R_EAX: ctx->Eax=obj_get_as_tetrabyte (val); break;
-        case R_EBX: ctx->Ebx=obj_get_as_tetrabyte (val); break;
-        case R_ECX: ctx->Ecx=obj_get_as_tetrabyte (val); break;
-        case R_EDX: ctx->Edx=obj_get_as_tetrabyte (val); break;
-        case R_ESI: ctx->Esi=obj_get_as_tetrabyte (val); break;
-        case R_EDI: ctx->Edi=obj_get_as_tetrabyte (val); break;
-        case R_EBP: ctx->Ebp=obj_get_as_tetrabyte (val); break;
-        case R_ESP: ctx->Esp=obj_get_as_tetrabyte (val); break;
-        case R_EIP: ctx->Eip=obj_get_as_tetrabyte (val); break;
+        case R_EAX: ctx->Eax=obj_get_as_tetra (val); break;
+        case R_EBX: ctx->Ebx=obj_get_as_tetra (val); break;
+        case R_ECX: ctx->Ecx=obj_get_as_tetra (val); break;
+        case R_EDX: ctx->Edx=obj_get_as_tetra (val); break;
+        case R_ESI: ctx->Esi=obj_get_as_tetra (val); break;
+        case R_EDI: ctx->Edi=obj_get_as_tetra (val); break;
+        case R_EBP: ctx->Ebp=obj_get_as_tetra (val); break;
+        case R_ESP: ctx->Esp=obj_get_as_tetra (val); break;
+        case R_EIP: ctx->Eip=obj_get_as_tetra (val); break;
 
         case R_AX: ctx->Eax=(ctx->Eax&0xFFFF0000) | (obj_get_as_wyde(val)); break;
         case R_BX: ctx->Ebx=(ctx->Ebx&0xFFFF0000) | (obj_get_as_wyde(val)); break;

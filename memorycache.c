@@ -30,7 +30,7 @@ MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_pl
 	return rt;
 };
 
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_memory_size)
 {
 	oassert ((testing_memory_size & (PAGE_SIZE-1))==0);
@@ -87,7 +87,7 @@ MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
 	rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
 	rbtree_copy (mc->_cache, rt->_cache, key_copier, value_copier);
 
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 	rt->testing=mc->testing;
 	rt->testing_memory=mc->testing_memory;
 	rt->testing_memory_size=mc->testing_memory_size;
@@ -120,7 +120,7 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 	rd_adr=idx<<LOG2_PAGE_SIZE;
 	t=DCALLOC(MemoryCacheElement, 1, "MemoryCacheElement");
 
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 	if (mc->testing)
 	{
 		if (rd_adr+PAGE_SIZE > mc->testing_memory_size)
@@ -131,7 +131,7 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 	};
 #endif
 
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 	if (mc->testing==false)
 #endif
 		if (ReadProcessMemory (mc->PHDL, (LPCVOID)rd_adr, t->block, PAGE_SIZE, &bytes_read)==false)
@@ -433,7 +433,7 @@ void MC_Flush(MemoryCache *mc)
 		if (v->to_be_flushed)
 		{
 			address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 			if (mc->testing)
 			{
 				oassert (adr+PAGE_SIZE < mc->testing_memory_size);
@@ -441,7 +441,7 @@ void MC_Flush(MemoryCache *mc)
 			};
 #endif       
 
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 			if (mc->testing==false)
 #endif            
 				if (WriteProcessMemory (mc->PHDL, (LPVOID)adr, v->block, PAGE_SIZE, NULL)==FALSE)
@@ -491,7 +491,7 @@ bool MC_CompareInternalStateWithMemory(MemoryCache *mc)
 			address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
 			SIZE_T bytes_read;
 
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 			if (mc->testing)
 			{
 				oassert (adr+PAGE_SIZE < mc->testing_memory_size);
@@ -499,7 +499,7 @@ bool MC_CompareInternalStateWithMemory(MemoryCache *mc)
 			};
 #endif
 
-#ifdef BOLT_DEBUG
+#ifdef _DEBUG
 			if (mc->testing==false)
 #endif
 				if (ReadProcessMemory (mc->PHDL, (LPCVOID)adr, tmp, PAGE_SIZE, &bytes_read)==false)

@@ -43,7 +43,9 @@ PNT_TIB get_TIB (HANDLE THDL)
     if (NtQueryInformationThread_ptr==NULL)
         die ("ntdll.dll!NtQueryInformationThread() was not found\n");
 
-    if (!NT_SUCCESS((*NtQueryInformationThread_ptr) (THDL, ThreadBasicInformation, &ThreadInfo, sizeof( THREAD_BASIC_INFORMATION ), 0 )))
+    // FIXME: untested
+    //if (!NT_SUCCESS((*NtQueryInformationThread_ptr) (THDL, ThreadBasicInformation, &ThreadInfo, sizeof( THREAD_BASIC_INFORMATION ), 0 )))
+    if ((*NtQueryInformationThread_ptr) (THDL, ThreadBasicInformation, &ThreadInfo, sizeof( THREAD_BASIC_INFORMATION ), 0 )<0)
         die ("NtQueryInformationThread() failed\n");
 
     return ThreadInfo.TebBaseAddress;
