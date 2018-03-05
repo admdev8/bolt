@@ -75,7 +75,8 @@ double get_STx (const CONTEXT *ctx, unsigned reg)
 #ifdef _WIN64
     return cvt80to64((byte*)&ctx->FltSave.FloatRegisters[reg]);
 #else    
-    return cvt80to64((byte*)&ctx->FltSave.RegisterArea[reg*10]);
+    //return cvt80to64((byte*)&ctx->FltSave.RegisterArea[reg*10]);
+    return cvt80to64((byte*)&ctx->FloatSave.RegisterArea[reg]);
 #endif    
 };
 
@@ -598,7 +599,7 @@ void CONTEXT_set_reg_STx (CONTEXT * ctx, unsigned idx, double v)
 #ifdef _WIN64
     cvt64to80(v, (byte*)&ctx->FltSave.FloatRegisters[idx]);
 #else
-    cvt64to80(v, (byte*)&ctx->FltSave.RegisterArea[idx*10]);
+    cvt64to80(v, (byte*)&ctx->FloatSave.RegisterArea[idx*10]);
 #endif
 };
 
@@ -743,15 +744,25 @@ void dump_FPU (fds* s, CONTEXT *ctx)
 {
     strbuf sb_FCW=STRBUF_INIT;
     strbuf sb_FSW=STRBUF_INIT;
-    
-    if (ctx->FltSave.TagWord==0xFFFF)
+
+#ifdef _WIN64
+    DWORD tagword=ctx->FltSave.TagWord;
+    DWORD controlword=ctx->FltSave.ControlWord;
+    DWORD statusword=ctx->FltSave.StatusWord;
+#else
+    DWORD tagword=ctx->FloatSave.TagWord;
+    DWORD controlword=ctx->FloatSave.ControlWord;
+    DWORD statusword=ctx->FloatSave.StatusWord;
+#endif
+
+    if (tagword==0xFFFF)
         return;
 
-    FCW_to_str(ctx->FltSave.ControlWord, &sb_FCW);
-    FSW_to_str(ctx->FltSave.StatusWord, &sb_FSW);
+    FCW_to_str(controlword, &sb_FCW);
+    FSW_to_str(statusword, &sb_FSW);
 
-    L_fds (s, "FPU ControlWord=%s (0x%x)\n", sb_FCW.buf, ctx->FltSave.ControlWord);
-    L_fds (s, "FPU StatusWord=%s (0x%x)\n", sb_FSW.buf, ctx->FltSave.StatusWord);
+    L_fds (s, "FPU ControlWord=%s (0x%x)\n", sb_FCW.buf, controlword);
+    L_fds (s, "FPU StatusWord=%s (0x%x)\n", sb_FSW.buf, statusword);
 #ifdef THIS_CODE_IS_NOT_WORKING
     dump_FPU_tag_word(s, ctx);
 #endif    
@@ -769,7 +780,7 @@ void dump_FPU (fds* s, CONTEXT *ctx)
 #ifdef _WIN64
         BYTE *b=(BYTE*)&ctx->FltSave.FloatRegisters[ST];
 #else            
-        BYTE *b=(BYTE*)&ctx->FltSave.RegisterArea[ST*10];
+        BYTE *b=(BYTE*)&ctx->FloatSave.RegisterArea[ST*10];
 #endif            
         double a=get_STx(ctx, ST);
 

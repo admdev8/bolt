@@ -159,7 +159,8 @@ void f(char *str)
 		die ("no .pdata section found!\n");
 #else
 	cb_data.track_func_start=true;
-	PE_section_disasm (&im, text_sect, Fuzzy_Undefined /* x64_code */, &is_value_in_op2_cb, &cb_data);
+	PE_section_disasm (&im, text_sect, Fuzzy_Undefined /* x64_code */, &is_value_in_op2_cb, &cb_data, true /* report_error */);
+
 	if (cb_data.str_found)
 	{
 		printf ("0x" PRI_ADR_HEX "\n", original_base + cb_data.last_func_start);

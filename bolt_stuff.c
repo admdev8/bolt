@@ -51,7 +51,7 @@ PNT_TIB get_TIB (HANDLE THDL)
     return ThreadInfo.TebBaseAddress;
 };
 
-address TIB_get_stack_top (HANDLE THDL, MemoryCache *mem)
+address TIB_get_stack_top (HANDLE THDL, struct MemoryCache *mem)
 {
     PNT_TIB TEB;
     NT_TIB TIB;
@@ -65,7 +65,7 @@ address TIB_get_stack_top (HANDLE THDL, MemoryCache *mem)
     return (address)TIB.StackBase;
 };
 
-address TIB_get_stack_bottom (HANDLE THDL, MemoryCache *mem)
+address TIB_get_stack_bottom (HANDLE THDL, struct MemoryCache *mem)
 {
     PNT_TIB TEB;
     NT_TIB TIB;
@@ -79,7 +79,7 @@ address TIB_get_stack_bottom (HANDLE THDL, MemoryCache *mem)
     return (address)TIB.StackLimit;
 };
 
-address TIB_get_exceptionlist (HANDLE THDL, MemoryCache *mem)
+address TIB_get_exceptionlist (HANDLE THDL, struct MemoryCache *mem)
 {
     PNT_TIB TEB;
     NT_TIB TIB;
@@ -93,12 +93,12 @@ address TIB_get_exceptionlist (HANDLE THDL, MemoryCache *mem)
     return (address)TIB.ExceptionList;
 };
 
-bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, MemoryCache *mem)
+bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, struct MemoryCache *mem)
 {
     return p<=TIB_get_stack_top (THDL, mem) && p>=TIB_get_stack_bottom (THDL, mem);
 };
 
-address TIB_get_current_SEH_frame (MemoryCache *mc, HANDLE THDL)
+address TIB_get_current_SEH_frame (struct MemoryCache *mc, HANDLE THDL)
 {
     PNT_TIB TEB;
     NT_TIB TIB;

@@ -23,6 +23,7 @@
 #include "strbuf.h"
 #include "logging.h"
 #include "x86_disas.h"
+#include "bolt_addons.h"
 
 #ifdef _WIN64
 #define XMM_REGISTERS_TOTAL 16

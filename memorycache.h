@@ -6,7 +6,7 @@
  * | |_) | (_) | | |_ 
  * |_.__/ \___/|_|\__|
  *
- * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013
+ * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013-2017
  *
  * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License. 
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/.
@@ -33,18 +33,19 @@
 extern "C" {
 #endif
 
-typedef struct _MemoryCacheElement
+struct MemoryCacheElement
 {
     BYTE block[PAGE_SIZE];
+    //BYTE modified[PAGE_SIZE/8]; // 1 if byte was written there
     bool to_be_flushed; // do we need to flush the block at this address? (was it changed?)
-} MemoryCacheElement;
+};
 
-typedef struct _MemoryCache
+struct MemoryCache
 {
     HANDLE PHDL;
-    // адрес без последних 12 бит, ссылка на структуру MemoryCacheElement
+    // key: адрес без последних 12 бит; value: ссылка на структуру MemoryCacheElement
     rbtree* _cache;
-    
+
     BYTE * last_ptr;
     address last_ptr_idx;
     bool last_ptr_idx_present;
@@ -54,46 +55,46 @@ typedef struct _MemoryCache
     BYTE *testing_memory;
     SIZE_T testing_memory_size;
 #endif
-} MemoryCache;
+};
 
-BYTE *MC_find_page_ptr(MemoryCache* mc, address adr);
-void MC_mark_as_to_be_flushed(MemoryCache* mc, address idx);
-bool MC_LoadPageForAddress (MemoryCache* mc, address);
+BYTE *MC_find_page_ptr(struct MemoryCache* mc, address adr);
+void MC_mark_as_to_be_flushed(struct MemoryCache* mc, address idx);
+bool MC_LoadPageForAddress (struct MemoryCache* mc, address);
 
-MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places);
+struct MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places);
 #ifdef _DEBUG
-MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_memory_size);
+struct MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_memory_size);
 #endif
-void MC_MemoryCache_dtor(MemoryCache* mc, bool check_unflushed_elements);
+void MC_MemoryCache_dtor(struct MemoryCache* mc, bool check_unflushed_elements);
 
-MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache* mc);
+struct MemoryCache* MC_MemoryCache_copy_ctor (struct MemoryCache* mc);
 
-bool MC_ReadBuffer (MemoryCache* mc, address, SIZE_T, BYTE*);
-bool MC_WriteBuffer (MemoryCache* mc, address, SIZE_T, BYTE*);
-bool MC_L_print_buf_in_mem_ofs (MemoryCache* mc, address adr, REG size, REG ofs);
-bool MC_L_print_buf_in_mem (MemoryCache* mc, address adr, SIZE_T size);
+bool MC_ReadBuffer (struct MemoryCache* mc, address, SIZE_T, BYTE*);
+bool MC_WriteBuffer (struct MemoryCache* mc, address, SIZE_T, BYTE*);
+bool MC_L_print_buf_in_mem_ofs (struct MemoryCache* mc, address adr, REG size, REG ofs);
+bool MC_L_print_buf_in_mem (struct MemoryCache* mc, address adr, SIZE_T size);
     
-bool MC_ReadByte (MemoryCache* mc, address, BYTE*);
-bool MC_WriteByte (MemoryCache* mc, address, BYTE);
-bool MC_ReadWyde (MemoryCache* mc, address, WORD*);
-bool MC_WriteWyde (MemoryCache* mc, address, WORD);
-bool MC_ReadTetrabyte (MemoryCache* mc, address, DWORD*);
-bool MC_WriteTetrabyte (MemoryCache* mc, address, DWORD);
-bool MC_ReadOctabyte (MemoryCache* mc, address, DWORD64*);
-bool MC_WriteOctabyte (MemoryCache* mc, address, DWORD64);
+bool MC_ReadByte (struct MemoryCache* mc, address, BYTE*);
+bool MC_WriteByte (struct MemoryCache* mc, address, BYTE);
+bool MC_ReadWyde (struct MemoryCache* mc, address, WORD*);
+bool MC_WriteWyde (struct MemoryCache* mc, address, WORD);
+bool MC_ReadTetrabyte (struct MemoryCache* mc, address, DWORD*);
+bool MC_WriteTetrabyte (struct MemoryCache* mc, address, DWORD);
+bool MC_ReadOctabyte (struct MemoryCache* mc, address, DWORD64*);
+bool MC_WriteOctabyte (struct MemoryCache* mc, address, DWORD64);
 
-bool MC_ReadREG (MemoryCache* mc, address, REG * out);
-bool MC_WriteREG (MemoryCache* mc, address, REG);
+bool MC_ReadREG (struct MemoryCache* mc, address, REG * out);
+bool MC_WriteREG (struct MemoryCache* mc, address, REG);
     
-bool MC_WriteValue(MemoryCache *mc, address adr, unsigned width, REG val);
+bool MC_WriteValue(struct MemoryCache *mc, address adr, unsigned width, REG val);
 
-bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out);
+bool MC_GetString (struct MemoryCache *mc, address adr, bool unicode, strbuf * out);
     
-void MC_Flush(MemoryCache* mc);
+void MC_Flush(struct MemoryCache* mc);
 // was named MC_DryRunFlush()
-bool MC_CompareInternalStateWithMemory(MemoryCache* mc);
-void MC_dump_state(fds *s, MemoryCache *mc);
-bool MC_get_any_string (MemoryCache *mem, const address adr, strbuf *out);
+bool MC_CompareInternalStateWithMemory(struct MemoryCache* mc);
+void MC_dump_state(fds *s, struct MemoryCache *mc);
+bool MC_get_any_string (struct MemoryCache *mem, const address adr, strbuf *out);
 
 #ifdef  __cplusplus
 }

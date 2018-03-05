@@ -1,0 +1,66 @@
+OPTIONS=/D__WORDSIZE=32 /Zi /D_DEBUG /DRE_USE_MALLOC /I../octothorpe /I../porg /I../x86_disasm
+OBJECTS=bolt_stuff.obj CONTEXT_utils.obj disas_utils.obj memorycache.obj PE.obj PE_filling_code_patterns.obj PE_imports.obj X86_emu.obj \
+	X86_register_helpers.obj intrin_MSVC_x86.obj
+
+all: bolt.lib execs
+
+bolt.lib: $(OBJECTS)
+	lib.exe $(OBJECTS) /OUT:bolt.lib
+
+intrin_MSVC_x86.obj: intrin_MSVC_x86.asm intrin_MSVC_x86.h
+	ml /c intrin_MSVC_x86.asm
+
+bolt_stuff.obj: bolt_stuff.c bolt_stuff.h
+	cl bolt_stuff.c /c $(OPTIONS)
+
+CONTEXT_utils.obj: CONTEXT_utils.c CONTEXT_utils.h
+	cl CONTEXT_utils.c /c $(OPTIONS)
+
+disas_utils.obj: disas_utils.c disas_utils.h
+	cl disas_utils.c /c $(OPTIONS)
+
+memorycache.obj: memorycache.c memorycache.h
+	cl memorycache.c /c $(OPTIONS)
+
+PE.obj: PE.c PE.h
+	cl PE.c /c $(OPTIONS)
+
+PE_filling_code_patterns.obj: PE_filling_code_patterns.c PE_filling_code_patterns.h
+	cl PE_filling_code_patterns.c /c $(OPTIONS)
+
+PE_imports.obj: PE_imports.c PE_imports.h
+	cl PE_imports.c /c $(OPTIONS)
+
+X86_emu.obj: X86_emu.c X86_emu.h
+	cl X86_emu.c /c $(OPTIONS)
+
+X86_register_helpers.obj: X86_register_helpers.c X86_register_helpers.h
+	cl X86_register_helpers.c /c $(OPTIONS)
+
+execs: PE_add_imports.exe PE_dump_imports.exe PE_patcher.exe PE_remove_import.exe PE_search_str_refs.exe PE_remove_import_test.exe X86_emu_test.exe
+
+PE_add_imports.exe: PE_add_imports.c bolt.lib
+	cl PE_add_imports.c $(OPTIONS) /Fe: PE_add_imports.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
+
+PE_dump_imports.exe: PE_dump_imports.c bolt.lib
+	cl PE_dump_imports.c $(OPTIONS) /Fe: PE_dump_imports.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
+
+PE_patcher.exe: PE_patcher.c bolt.lib
+	cl PE_patcher.c $(OPTIONS) /Fe: PE_patcher.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
+
+PE_remove_import.exe: PE_remove_import.c bolt.lib
+	cl PE_remove_import.c $(OPTIONS) /Fe: PE_remove_import.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
+
+PE_search_str_refs.exe: PE_search_str_refs.c bolt.lib
+	cl PE_search_str_refs.c $(OPTIONS) /Fe: PE_search_str_refs.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
+
+X86_emu_test.exe: X86_emu_test.c bolt.lib
+	cl X86_emu_test.c $(OPTIONS) /Fe: X86_emu_test.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
+
+PE_remove_import_test.exe: PE_remove_import_test.c
+	cl PE_remove_import_test.c $(OPTIONS) /Fe: PE_remove_import_test.exe
+
+clean:
+	del *.obj
+	del *.exe
+	del bolt.lib

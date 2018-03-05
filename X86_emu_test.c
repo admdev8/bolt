@@ -2,7 +2,11 @@
 #include "memutils.h"
 #include "X86_emu.h"
 #include "x86.h"
+#ifdef _WIN64
 #include "intrin_MSVC_x64.h"
+#else
+#include "intrin_MSVC_x86.h"
+#endif
 #include "x86_disas.h"
 #include "oassert.h"
 #include "rand.h"
@@ -25,12 +29,12 @@ REG gen_rand_REG()
 
 void Da_emulate_tests()
 {
-	Da_emulate_result r;	
+	enum Da_emulate_result r;	
 	CONTEXT ctx;
 	bool b;
 	struct Da da;
 	BYTE* memory_test=DCALLOC(byte, PAGE_SIZE, "BYTE");
-	MemoryCache *mc=MC_MemoryCache_ctor_testing (memory_test, PAGE_SIZE);
+	struct MemoryCache *mc=MC_MemoryCache_ctor_testing (memory_test, PAGE_SIZE);
 	bzero (&ctx, sizeof(CONTEXT));
 	cur_fds.fd1=stdout; // for dump_CONTEXT
 
@@ -43,7 +47,11 @@ void Da_emulate_tests()
 		for (byte CL=0; CL<0x40; CL++)
 		{
 			REG result;
+#ifdef _WIN64
 			void (*intrin_funcs[])(REG, uint8_t, REG*, REG*)={ &intrin_SHL, &intrin_SHR, &intrin_SAR };
+#else
+			void (__fastcall *intrin_funcs[])(REG, uint8_t, REG*, REG*)={ &intrin_SHL, &intrin_SHR, &intrin_SAR };
+#endif
 			// SHL [RSI], CL, etc
 #ifdef _WIN64
 			const char *opcodes[]={ X64_SHL_OP_RSI_CP_CL, X64_SHR_OP_RSI_CP_CL, X64_SAR_OP_RSI_CP_CL };
@@ -64,7 +72,13 @@ void Da_emulate_tests()
 				oassert(b);
 				REG intrin_result, intrin_result_flags=0;
 				intrin_funcs[f] (val, CL, &intrin_result, &intrin_result_flags);
-				oassert(intrin_result==result);
+				//oassert(intrin_result==result);
+				if(intrin_result!=result)
+				{
+					printf ("%s:%d f=%d intrin_result=0x"PRI_REG_HEX_PAD" result=0x"PRI_REG_HEX_PAD"\n", __FILE__, __LINE__, f, intrin_result, result);
+					//exit(0);
+					oassert(0);
+				};
 /*
 	OF flag behaviour is weird on different CPUs.
 	I'm not sure anymore.
@@ -87,11 +101,11 @@ void Da_emulate_tests()
 	for (unsigned i=0; i<1000; i++)
 	{
 		REG op1=gen_rand_REG(), op2=gen_rand_REG(), flags=gen_rand_REG() & FLAG_PSAZOC;
-
-		void (*intrin_funcs[])(REG, REG, REG*, REG*)={ &intrin_ADD, &intrin_ADC, &intrin_SUB, &intrin_SBB, &intrin_XOR, &intrin_OR, &intrin_AND };
 #ifdef _WIN64
+		void (*intrin_funcs[])(REG, REG, REG*, REG*)={ &intrin_ADD, &intrin_ADC, &intrin_SUB, &intrin_SBB, &intrin_XOR, &intrin_OR, &intrin_AND };
 		const char *opcodes[]={ X86_ADD_RAX_RBX, X86_ADC_RAX_RBX, X86_SUB_RAX_RBX, X86_SBB_RAX_RBX, X86_XOR_RAX_RBX, X86_OR_RAX_RBX, X86_AND_RAX_RBX };
 #else
+		void (__fastcall *intrin_funcs[])(REG, REG, REG*, REG*)={ &intrin_ADD, &intrin_ADC, &intrin_SUB, &intrin_SBB, &intrin_XOR, &intrin_OR, &intrin_AND };
 		const char *opcodes[]={ X86_ADD_EAX_EBX, X86_ADC_EAX_EBX, X86_SUB_EAX_EBX, X86_SBB_EAX_EBX, X86_XOR_EAX_EBX, X86_OR_EAX_EBX, X86_AND_EAX_EBX };
 #endif
 		for (int f=0; f<6; f++)
@@ -114,10 +128,11 @@ void Da_emulate_tests()
 	{
 		REG op1=gen_rand_REG(), flags=gen_rand_REG() & FLAG_PSAZOC;
 
-		void (*intrin_funcs[])(REG, REG*, REG*)={ &intrin_NOT, &intrin_NEG };
 #ifdef _WIN64
+		void (*intrin_funcs[])(REG, REG*, REG*)={ &intrin_NOT, &intrin_NEG };
 		const char *opcodes[]={ X86_NOT_RAX, X86_NEG_RAX };
 #else
+		void (__fastcall *intrin_funcs[])(REG, REG*, REG*)={ &intrin_NOT, &intrin_NEG };
 		const char *opcodes[]={ X86_NOT_EAX, X86_NEG_EAX };
 #endif
 		for (int f=0; f<2; f++)
@@ -133,14 +148,21 @@ void Da_emulate_tests()
 			oassert(r==DA_EMULATED_OK);
 			REG intrin_result, intrin_result_flags=flags;
 			intrin_funcs[f] (op1, &intrin_result, &intrin_result_flags);
-			oassert(CONTEXT_get_Accum(&ctx)==intrin_result);
+			//oassert(CONTEXT_get_Accum(&ctx)==intrin_result);
+			if(CONTEXT_get_Accum(&ctx)!=intrin_result)
+			{
+				printf ("%s:%d f=%d CONTEXT_get_Accum(&ctx)=0x"PRI_REG_HEX_PAD" intrin_result=0x"PRI_REG_HEX_PAD"\n", __FILE__, __LINE__, f, 
+					CONTEXT_get_Accum(&ctx), intrin_result);
+				//exit(0);
+				oassert(0);
+			};
 
 			// I don't know how ZF appeared in intrin_ functions
 			REMOVE_BIT(ctx.EFlags, FLAG_ZF);
 			REMOVE_BIT(intrin_result_flags, FLAG_ZF);
 			if ((ctx.EFlags & FLAG_PSAZOC) != (intrin_result_flags & FLAG_PSAZOC))
 			{
-				printf ("f=%d op1=0x%"PRIx64" intrin_result=0x%"PRIx64"\n", f, op1, intrin_result);
+				printf ("f=%d op1=0x"PRI_REG_HEX_PAD" intrin_result=0x"PRI_REG_HEX_PAD"\n", f, op1, intrin_result);
 
 				printf ("flags are not equal. emulated:\n");
     				dump_flags(&cur_fds, ctx.EFlags & FLAG_PSAZOC);

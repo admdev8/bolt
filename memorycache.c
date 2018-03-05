@@ -21,9 +21,9 @@
 #include "oassert.h"
 #include "fmt_utils.h"
 
-MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places)
+struct MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places)
 {
-	MemoryCache* rt=DCALLOC(MemoryCache, 1, "MemoryCache");
+	struct MemoryCache* rt=DCALLOC(struct MemoryCache, 1, "MemoryCache");
 	rt->PHDL=PHDL;
 	rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
 	rt->dont_read_from_quicksilver_places=dont_read_from_quicksilver_places;
@@ -31,10 +31,10 @@ MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_pl
 };
 
 #ifdef _DEBUG
-MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_memory_size)
+struct MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_memory_size)
 {
 	oassert ((testing_memory_size & (PAGE_SIZE-1))==0);
-	MemoryCache* rt=DCALLOC(MemoryCache, 1, "MemoryCache");
+	struct MemoryCache* rt=DCALLOC(struct MemoryCache, 1, "MemoryCache");
 	rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
 	rt->testing=true;
 	rt->testing_memory=testing_memory;
@@ -43,7 +43,7 @@ MemoryCache* MC_MemoryCache_ctor_testing(BYTE *testing_memory, SIZE_T testing_me
 };
 #endif
 
-void MC_MemoryCache_dtor(MemoryCache *mc, bool check_unflushed_elements)
+void MC_MemoryCache_dtor(struct MemoryCache *mc, bool check_unflushed_elements)
 {
 	struct rbtree_node_t *i;
 
@@ -51,7 +51,7 @@ void MC_MemoryCache_dtor(MemoryCache *mc, bool check_unflushed_elements)
 	{
 		for (i=rbtree_minimum(mc->_cache); i!=NULL; i=rbtree_succ(i))
 		{
-			MemoryCacheElement *v=(MemoryCacheElement*)i->value;
+			struct MemoryCacheElement *v=(struct MemoryCacheElement*)i->value;
 			if (v->to_be_flushed)
 			{
 				printf ("%s(): there are still elements to be flushed!\n", __FUNCTION__);
@@ -72,16 +72,16 @@ static void* key_copier(void *i)
 
 static void* value_copier(void *v)
 {
-	return DMEMDUP (v, sizeof(MemoryCacheElement), "MemoryCacheElement");
+	return DMEMDUP (v, sizeof(struct MemoryCacheElement), "MemoryCacheElement");
 };
 
-MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
+struct MemoryCache* MC_MemoryCache_copy_ctor (struct MemoryCache *mc)
 {
-	MemoryCache* rt;
+	struct MemoryCache* rt;
 
 	//L (2, __FUNCTION__"(): begin\n");
 
-	rt=DCALLOC(MemoryCache, 1, "MemoryCache"); 
+	rt=DCALLOC(struct MemoryCache, 1, "MemoryCache"); 
 	rt->PHDL=mc->PHDL;
 	rt->dont_read_from_quicksilver_places=mc->dont_read_from_quicksilver_places;
 	rt->_cache=rbtree_create(true, "MemoryCache._cache", compare_size_t);
@@ -95,11 +95,11 @@ MemoryCache* MC_MemoryCache_copy_ctor (MemoryCache *mc)
 	return rt;
 };
 
-bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
+bool MC_LoadPageForAddress (struct MemoryCache *mc, address adr)
 {
 	address idx, rd_adr;
 	SIZE_T bytes_read;
-	MemoryCacheElement *t=NULL;
+	struct MemoryCacheElement *t=NULL;
 
 #ifndef _WIN64
 	// as of win32
@@ -118,7 +118,7 @@ bool MC_LoadPageForAddress (MemoryCache *mc, address adr)
 
 	idx=adr>>LOG2_PAGE_SIZE;
 	rd_adr=idx<<LOG2_PAGE_SIZE;
-	t=DCALLOC(MemoryCacheElement, 1, "MemoryCacheElement");
+	t=DCALLOC(struct MemoryCacheElement, 1, "MemoryCacheElement");
 
 #ifdef _DEBUG
 	if (mc->testing)
@@ -146,27 +146,27 @@ free_t_and_return_false:
 	return false;
 };
 
-bool MC_ReadBuffer (MemoryCache *mc, address adr, SIZE_T size, BYTE* outbuf)
+bool MC_ReadBuffer (struct MemoryCache *mc, address adr, SIZE_T size, BYTE* outbuf)
 {
 	SIZE_T i;
-	// FIXME: это временное решение. и тормозное, конечно
+	// FIXME: slow
 	for (i=0; i<size; i++)
 		if (MC_ReadByte (mc, adr+i, &outbuf[i])==false)
 			return false;
 	return true;
 };
 
-bool MC_WriteBuffer (MemoryCache *mc, address adr, SIZE_T size, BYTE* inbuf)
+bool MC_WriteBuffer (struct MemoryCache *mc, address adr, SIZE_T size, BYTE* inbuf)
 {
 	SIZE_T i;
-	// FIXME: это временное решение. и тормозное, конечно
+	// FIXME: slow
 	for (i=0; i<size; i++)
 		if (MC_WriteByte (mc, adr+i, inbuf[i])==false)
 			return false;
 	return true;
 };
 
-BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
+BYTE* MC_find_page_ptr(struct MemoryCache *mc, address adr)
 {
 	address idx=adr>>LOG2_PAGE_SIZE;
 
@@ -174,12 +174,12 @@ BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
 		return mc->last_ptr;
 	else
 	{
-		MemoryCacheElement *tmp=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
+		struct MemoryCacheElement *tmp=(struct MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
 		if (tmp==NULL)
 		{
-			if (MC_LoadPageForAddress (mc, adr)==false) // подгружаем блок если у нас его нету
+			if (MC_LoadPageForAddress (mc, adr)==false) // load block if it's absent in our records
 				return NULL;
-			tmp=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
+			tmp=(struct MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
 			oassert (tmp!=NULL);
 			mc->last_ptr=tmp->block;
 			mc->last_ptr_idx=idx;
@@ -191,7 +191,7 @@ BYTE* MC_find_page_ptr(MemoryCache *mc, address adr)
 	};
 };
 
-bool MC_ReadByte (MemoryCache *mc, address adr, BYTE * out)
+bool MC_ReadByte (struct MemoryCache *mc, address adr, BYTE * out)
 {
 	BYTE* p=MC_find_page_ptr (mc, adr);
 	if (p==NULL)
@@ -200,14 +200,14 @@ bool MC_ReadByte (MemoryCache *mc, address adr, BYTE * out)
 	return true;
 };
 
-void MC_mark_as_to_be_flushed(MemoryCache *mc, address idx)
+void MC_mark_as_to_be_flushed(struct MemoryCache *mc, address idx)
 {
-	MemoryCacheElement *m=(MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
+	struct MemoryCacheElement *m=(struct MemoryCacheElement*)rbtree_lookup(mc->_cache, (void*)idx);
 	oassert (m!=NULL);
 	m->to_be_flushed=true;
 };
 
-bool MC_WriteByte (MemoryCache *mc, address adr, BYTE val)
+bool MC_WriteByte (struct MemoryCache *mc, address adr, BYTE val)
 {
 	address idx;
 	BYTE *p;
@@ -222,7 +222,7 @@ bool MC_WriteByte (MemoryCache *mc, address adr, BYTE val)
 	return true;
 };
 
-bool MC_ReadWyde (MemoryCache *mc, address adr, WORD * out)
+bool MC_ReadWyde (struct MemoryCache *mc, address adr, WORD * out)
 {
 	BYTE *p;
 	int adr_frac;
@@ -249,7 +249,7 @@ bool MC_ReadWyde (MemoryCache *mc, address adr, WORD * out)
 	return true;
 };
 
-bool MC_WriteWyde (MemoryCache *mc, address adr, WORD val)
+bool MC_WriteWyde (struct MemoryCache *mc, address adr, WORD val)
 {
 	address idx;
 	BYTE *p;
@@ -279,7 +279,7 @@ bool MC_WriteWyde (MemoryCache *mc, address adr, WORD val)
 	return true;
 };
 
-bool MC_ReadTetrabyte (MemoryCache *mc, address adr, DWORD * out)
+bool MC_ReadTetrabyte (struct MemoryCache *mc, address adr, DWORD * out)
 {
 	//L (2, __FUNCTION__ "(): adr=0x" PRI_ADR_HEX "\n", adr);
 
@@ -319,7 +319,7 @@ bool MC_ReadTetrabyte (MemoryCache *mc, address adr, DWORD * out)
 	return true;
 };
 
-bool MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
+bool MC_WriteTetrabyte (struct MemoryCache *mc, address adr, DWORD val)
 {
 	address idx;
 	BYTE *p;
@@ -354,7 +354,7 @@ bool MC_WriteTetrabyte (MemoryCache *mc, address adr, DWORD val)
 	return true;
 };
 
-bool MC_ReadOctabyte (MemoryCache *mc, address adr, DWORD64 * out)
+bool MC_ReadOctabyte (struct MemoryCache *mc, address adr, DWORD64 * out)
 {
 	unsigned adr_frac;
 	BYTE *p=MC_find_page_ptr (mc, adr);
@@ -379,7 +379,7 @@ bool MC_ReadOctabyte (MemoryCache *mc, address adr, DWORD64 * out)
 	return true;
 };
 
-bool MC_WriteOctabyte (MemoryCache *mc, address adr, DWORD64 val)
+bool MC_WriteOctabyte (struct MemoryCache *mc, address adr, DWORD64 val)
 {
 	int adr_frac;
 	address idx=adr>>LOG2_PAGE_SIZE;
@@ -405,7 +405,7 @@ bool MC_WriteOctabyte (MemoryCache *mc, address adr, DWORD64 val)
 	return true;
 };
 
-bool MC_ReadREG (MemoryCache *mc, address a, REG * out)
+bool MC_ReadREG (struct MemoryCache *mc, address a, REG * out)
 {
 #ifdef _WIN64
 	return MC_ReadOctabyte (mc, a, (DWORD64*)out);
@@ -414,7 +414,7 @@ bool MC_ReadREG (MemoryCache *mc, address a, REG * out)
 #endif
 };
 
-bool MC_WriteREG (MemoryCache *mc, address a, REG val)
+bool MC_WriteREG (struct MemoryCache *mc, address a, REG val)
 {
 #ifdef _WIN64
 	return MC_WriteOctabyte (mc, a, val);
@@ -423,13 +423,13 @@ bool MC_WriteREG (MemoryCache *mc, address a, REG val)
 #endif
 };
 
-void MC_Flush(MemoryCache *mc)
+void MC_Flush(struct MemoryCache *mc)
 {
 	struct rbtree_node_t *i;
 
 	for (i=rbtree_minimum(mc->_cache); i!=NULL; i=rbtree_succ(i))
 	{
-		MemoryCacheElement *v=(MemoryCacheElement*)i->value;
+		struct MemoryCacheElement *v=(struct MemoryCacheElement*)i->value;
 		if (v->to_be_flushed)
 		{
 			address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
@@ -464,19 +464,19 @@ void MC_Flush(MemoryCache *mc)
 	};
 };
 
-void MC_dump_state(fds *s, MemoryCache *mc)
+void MC_dump_state(fds *s, struct MemoryCache *mc)
 {
 	rbtree_node *i;
 	L_fds (s, "%s()\n", __FUNCTION__);
 
 	for (i=rbtree_minimum(mc->_cache); i!=NULL; i=rbtree_succ(i))
 	{
-		MemoryCacheElement *v=(MemoryCacheElement*)i->value;
+		struct MemoryCacheElement *v=(struct MemoryCacheElement*)i->value;
 		L_fds (s, "adr=0x" PRI_ADR_HEX ", to_be_flushed=", (size_t)i->key, v->to_be_flushed);
 	};
 };
 
-bool MC_CompareInternalStateWithMemory(MemoryCache *mc)
+bool MC_CompareInternalStateWithMemory(struct MemoryCache *mc)
 {
 	BYTE* tmp=DMALLOC(BYTE, PAGE_SIZE, "tmp");
 	bool rt=true;
@@ -485,7 +485,7 @@ bool MC_CompareInternalStateWithMemory(MemoryCache *mc)
 
 	for (i=rbtree_minimum(mc->_cache); i!=NULL; i=rbtree_succ(i))
 	{
-		MemoryCacheElement *v=(MemoryCacheElement*)i->value;
+		struct MemoryCacheElement *v=(struct MemoryCacheElement*)i->value;
 		if (v->to_be_flushed)
 		{
 			address adr=((size_t)i->key) << LOG2_PAGE_SIZE;
@@ -526,7 +526,7 @@ bool MC_CompareInternalStateWithMemory(MemoryCache *mc)
 	return rt;
 };
 
-// FIXME: invent a good name for it!
+// FIXME: find a good name for it!
 static bool my_isprint (char a)
 {
 	if (a==0x0A)
@@ -548,7 +548,7 @@ static bool my_isprint (char a)
 // can output something to out, but eventually return false
 // in case of "\x00" returns true, meaning, empty string
 // emptry strings like " " are OK too. I need another function for string validity checking!
-bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out)
+bool MC_GetString (struct MemoryCache *mc, address adr, bool unicode, strbuf * out)
 {
 	int step, i;
 	byte by, _out;
@@ -586,7 +586,7 @@ bool MC_GetString (MemoryCache *mc, address adr, bool unicode, strbuf * out)
 	return true;
 };
 
-bool MC_L_print_buf_in_mem_ofs (MemoryCache *mc, address adr, REG size, REG ofs)
+bool MC_L_print_buf_in_mem_ofs (struct MemoryCache *mc, address adr, REG size, REG ofs)
 {
 	bool rt=false;
 
@@ -603,12 +603,12 @@ exit:
 	return rt;
 };
 
-bool MC_L_print_buf_in_mem (MemoryCache *mc, address adr, SIZE_T size)
+bool MC_L_print_buf_in_mem (struct MemoryCache *mc, address adr, SIZE_T size)
 {
 	return MC_L_print_buf_in_mem_ofs (mc, adr, size, 0);
 };
 
-bool MC_get_any_string (MemoryCache *mem, const address adr, strbuf *out)
+bool MC_get_any_string (struct MemoryCache *mem, const address adr, strbuf *out)
 {
 	bool rt=false;
 	strbuf t=STRBUF_INIT;
@@ -636,7 +636,7 @@ exit:
 	return rt;
 };
 
-bool MC_WriteValue(MemoryCache *mc, address adr, unsigned width, REG val)
+bool MC_WriteValue(struct MemoryCache *mc, address adr, unsigned width, REG val)
 {
 	switch (width)
 	{
@@ -648,4 +648,3 @@ bool MC_WriteValue(MemoryCache *mc, address adr, unsigned width, REG val)
 			oassert(0);
 	};
 };
-

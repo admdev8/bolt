@@ -22,7 +22,7 @@
 #include "fuzzybool.h"
 #include "x86_disas.h"
 
-typedef struct _PE_info
+struct PE_info
 {
 	bool PE32_plus;
 	address original_base;
@@ -31,7 +31,7 @@ typedef struct _PE_info
 	DWORD machine;
 	SIZE_T size;
 	char *internal_name; // allocated via DSTRDUP. may be NULL.
-} PE_info;
+};
 
 typedef void (*callback_add_symbol)(address a, char *name, void* param);
 
@@ -47,8 +47,8 @@ IMAGE_IMPORT_DESCRIPTOR* PE_get_import_descriptor (LOADED_IMAGE *im, bool PE32_p
 address PE_get_original_base (LOADED_IMAGE *im);
 
 void PE_get_sections_info (char *fname, IMAGE_SECTION_HEADER **sections, unsigned *sections_total);
-void PE_get_info (char *fname, address loaded_base, PE_info *out, callback_add_symbol add_symbol_fn, void *add_symbol_fn_params);
-void PE_info_free (PE_info *i);
+void PE_get_info (char *fname, address loaded_base, struct PE_info *out, callback_add_symbol add_symbol_fn, void *add_symbol_fn_params);
+void PE_info_free (struct PE_info *i);
 
 typedef void (*callback_enum_fixups)(unsigned i, byte type, address a, void* param);
 void enum_all_fixups (LOADED_IMAGE *im, callback_enum_fixups callback_fn, void* param);

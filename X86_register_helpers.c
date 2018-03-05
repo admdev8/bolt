@@ -182,7 +182,7 @@ void X86_register_get_value (enum X86_register r, const CONTEXT *ctx, obj* out)
                        case R_XMM14: idx=14; break;
                        case R_XMM15: idx=15; break;
 #endif
-                       default: fatal_error();
+                       default: oassert(0);
                    };
                    
                    obj_xmm2 ((uint8_t*)&get_XMM_SAVE_AREA32(ctx)->XmmRegisters[idx], out);
@@ -198,12 +198,12 @@ void X86_register_get_value (enum X86_register r, const CONTEXT *ctx, obj* out)
         case R_ST7: obj_double2 (get_STx(ctx, 7), out); break;
 
         case R_ABSENT:
-                    fatal_error();
+                    oassert(0);
                     break;
 
         default:
                     oassert (!"this register isn't implemented here yet");
-                    fatal_error();
+                    oassert(0);
                     break;
     };
 };
@@ -261,7 +261,7 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
                 case R_XMM14: idx=14; break;
                 case R_XMM15: idx=15; break;
 #endif
-                default: fatal_error();
+                default: oassert(0);
             };
     
             memcpy (&get_XMM_SAVE_AREA32(ctx)->XmmRegisters[idx], obj_get_as_xmm(val), 16); 
@@ -276,6 +276,16 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
         case R_RDI: ctx->Rdi=obj_get_as_octa (val); break;
         case R_RBP: ctx->Rbp=obj_get_as_octa (val); break;
         case R_RSP: ctx->Rsp=obj_get_as_octa (val); break;
+
+        case R_R8: ctx->R8=obj_get_as_octa (val); break;
+        case R_R9: ctx->R9=obj_get_as_octa (val); break;
+        case R_R10: ctx->R10=obj_get_as_octa (val); break;
+        case R_R11: ctx->R11=obj_get_as_octa (val); break;
+        case R_R12: ctx->R12=obj_get_as_octa (val); break;
+        case R_R13: ctx->R13=obj_get_as_octa (val); break;
+        case R_R14: ctx->R14=obj_get_as_octa (val); break;
+        case R_R15: ctx->R15=obj_get_as_octa (val); break;
+
         case R_R8D:  ctx->R8= (ctx->R8&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); break;
         case R_R9D:  ctx->R9= (ctx->R9&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); break;
         case R_R10D: ctx->R10=(ctx->R10&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
@@ -284,8 +294,33 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
         case R_R13D: ctx->R13=(ctx->R13&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
         case R_R14D: ctx->R14=(ctx->R14&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
         case R_R15D: ctx->R15=(ctx->R15&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+
+        case R_R8L: ctx->R8=(ctx->R8&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_R9L: ctx->R9=(ctx->R9&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_R10L: ctx->R10=(ctx->R10&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_R11L: ctx->R11=(ctx->R11&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_R12L: ctx->R12=(ctx->R12&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_R13L: ctx->R13=(ctx->R13&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_R14L: ctx->R14=(ctx->R14&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_R15L: ctx->R15=(ctx->R15&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+
+        case R_DIL: ctx->Rdi=(ctx->Rdi&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_SIL: ctx->Rsi=(ctx->Rsi&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+
+        case R_AL: ctx->Rax=(ctx->Rax&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_BL: ctx->Rbx=(ctx->Rbx&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_CL: ctx->Rcx=(ctx->Rcx&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+        case R_DL: ctx->Rdx=(ctx->Rdx&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+
         case R_RIP:  ctx->Rip=obj_get_as_octa (val); break;
-                     // TODO: to add more
+
+        case R_EAX: ctx->Rax=(ctx->Rax&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
+        case R_EBX: ctx->Rax=(ctx->Rbx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
+        case R_ECX: ctx->Rax=(ctx->Rcx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
+        case R_EDX: ctx->Rax=(ctx->Rdx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
+        case R_ESI: ctx->Rax=(ctx->Rsi&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
+        case R_EDI: ctx->Rax=(ctx->Rdi&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
+        case R_EBP: ctx->Rbp=(ctx->Rbp&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
 #else
         case R_EAX: ctx->Eax=obj_get_as_tetra (val); break;
         case R_EBX: ctx->Ebx=obj_get_as_tetra (val); break;
@@ -310,7 +345,7 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
         case R_BL: ctx->Ebx=(ctx->Ebx&0xFFFFFF00) | (obj_get_as_byte(val)); break;
         case R_CL: ctx->Ecx=(ctx->Ecx&0xFFFFFF00) | (obj_get_as_byte(val)); break;
         case R_DL: ctx->Edx=(ctx->Edx&0xFFFFFF00) | (obj_get_as_byte(val)); break;
-
+        
         case R_AH: ctx->Eax=(ctx->Eax&0xFFFF00FF) | ((obj_get_as_byte(val))<<8); break;
         case R_BH: ctx->Ebx=(ctx->Ebx&0xFFFF00FF) | ((obj_get_as_byte(val))<<8); break;
         case R_CH: ctx->Ecx=(ctx->Ecx&0xFFFF00FF) | ((obj_get_as_byte(val))<<8); break;
@@ -326,8 +361,8 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
         case R_ST6: CONTEXT_set_reg_STx (ctx, 6, obj_get_as_double(val)); break;
         case R_ST7: CONTEXT_set_reg_STx (ctx, 7, obj_get_as_double(val)); break;
         default:
-                    printf ("%s. r=%s\n", __FUNCTION__, X86_register_ToString (r));
-                    fatal_error();
+                    printf ("%s. r=%s, %d\n", __FUNCTION__, X86_register_ToString (r), r);
+                    oassert(0);
     };
 };
 

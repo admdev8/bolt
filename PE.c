@@ -18,6 +18,34 @@
 #include <dbghelp.h>
 //#include <imagehlp.h>
 
+// THIS IS A CRUTCH for win32 version. without it, these functions are not declared as stdcall (must be so for win32):
+#ifndef _WIN64
+PIMAGE_NT_HEADERS
+__stdcall
+CheckSumMappedFile (
+    _In_ PVOID BaseAddress,
+    _In_ DWORD FileLength,
+    _Out_ PDWORD HeaderSum,
+    _Out_ PDWORD CheckSum
+    );
+
+BOOL
+__stdcall
+MapAndLoad(
+    _In_ PCSTR ImageName,
+    _In_opt_ PCSTR DllPath,
+    _Out_ PLOADED_IMAGE LoadedImage,
+    _In_ BOOL DotDll,
+    _In_ BOOL ReadOnly
+    );
+
+BOOL
+__stdcall
+UnMapAndLoad(
+    _Inout_ PLOADED_IMAGE LoadedImage
+    );
+#endif
+
 #include "porg_utils.h"
 #include "PE.h"
 #include "memutils.h"
@@ -36,6 +64,7 @@ void MapAndLoad_or_die(PSTR image_name, PSTR dllpath,
 {
 	if (MapAndLoad (image_name, dllpath, LoadedImage, DotDll, ReadOnly)==false)
 	{
+		printf ("%s() Error\n", __FUNCTION__);
 		printf ("image_name=%s\n", image_name);
 		printf ("dllpath=%s\n", dllpath);
 		die_GetLastError ("MapAndLoad() failed.");
@@ -53,12 +82,19 @@ void UnMapAndLoad_or_die(PLOADED_IMAGE LoadedImage)
 void PE_get_sections_info (char *fname, IMAGE_SECTION_HEADER **sections, unsigned *sections_total)
 {
 	LOADED_IMAGE im;
-	MapAndLoad_or_die (fname, NULL, &im, false, true);
+
+        strbuf sb_path=STRBUF_INIT;
+
+        full_path_and_filename_to_path_only (&sb_path, fname);
+
+	MapAndLoad_or_die (fname, sb_path.buf, &im, false, true);
+	//MapAndLoad_or_die (fname, NULL, &im, false, true);
 
 	*sections_total=im.NumberOfSections;
 	*sections=DMEMDUP(im.Sections, im.NumberOfSections*sizeof(IMAGE_SECTION_HEADER), 
 			"IMAGE_SECTION_HEADER[]");
 
+	strbuf_deinit(&sb_path);
 	UnMapAndLoad_or_die (&im);
 };
 
@@ -160,12 +196,12 @@ address PE_get_original_base (LOADED_IMAGE *im)
 #endif
 };
 
-void PE_get_info (char *fname, address loaded_base, PE_info *out, callback_add_symbol add_symbol_fn, void *add_symbol_fn_params)
+void PE_get_info (char *fname, address loaded_base, struct PE_info *out, callback_add_symbol add_symbol_fn, void *add_symbol_fn_params)
 {
 	LOADED_IMAGE im;
 	char *s;
 
-	bzero (out, sizeof(PE_info));
+	bzero (out, sizeof(struct PE_info));
 
 	MapAndLoad_or_die (fname, NULL, &im, false, true);
 
@@ -223,7 +259,7 @@ void PE_get_info (char *fname, address loaded_base, PE_info *out, callback_add_s
 	UnMapAndLoad_or_die (&im);
 };
 
-void PE_info_free (PE_info *i)
+void PE_info_free (struct PE_info *i)
 {
 	DFREE (i->internal_name);
 	DFREE(i);

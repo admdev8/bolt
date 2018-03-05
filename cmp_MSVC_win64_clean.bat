@@ -1,1 +1,1 @@
-nmake clean /f Makefile.msvc
+nmake clean /f Makefile64.msvc

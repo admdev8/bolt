@@ -1,1 +1,1 @@
-nmake all /f Makefile.msvc
+nmake all /f Makefile64.msvc

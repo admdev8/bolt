@@ -107,7 +107,7 @@ void set_PF (CONTEXT * ctx, obj* res)
     set_or_clear_flag (ctx, FLAG_PF, parity_lookup[get_lowest_byte(res)]);
 };
 
-bool DO_PUSH (CONTEXT * ctx, MemoryCache *mem, REG val)
+bool DO_PUSH (CONTEXT * ctx, struct MemoryCache *mem, REG val)
 {
     REG new_SP=CONTEXT_get_SP(ctx)-sizeof(REG);
     bool b=MC_WriteREG (mem, new_SP, val);
@@ -117,7 +117,7 @@ bool DO_PUSH (CONTEXT * ctx, MemoryCache *mem, REG val)
     return true;
 };
 
-bool DO_POP (CONTEXT * ctx, MemoryCache *mem, REG *outval)
+bool DO_POP (CONTEXT * ctx, struct MemoryCache *mem, REG *outval)
 {
     bool b=MC_ReadREG (mem, CONTEXT_get_SP(ctx), outval);
     if (b==false)
@@ -127,13 +127,13 @@ bool DO_POP (CONTEXT * ctx, MemoryCache *mem, REG *outval)
     return true;
 };
 
-Da_emulate_result Da_emulate_MOV_op1_op2(struct Da* d, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
+enum Da_emulate_result Da_emulate_MOV_op1_op2(struct Da* d, CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     obj tmp; // we can't allocate it dynamically, it's high performance code after all!
     tmp.t=OBJ_NONE;
     address rt_adr;
     bool b;
-    Da_emulate_result r;
+    enum Da_emulate_result r;
 
     //L (2, __FUNCTION__ "() begin\n");
 
@@ -177,7 +177,7 @@ exit:
     return r;
 };
 
-Da_emulate_result Da_emulate_Jcc (struct Da* d, bool cond, CONTEXT * ctx)
+enum Da_emulate_result Da_emulate_Jcc (struct Da* d, bool cond, CONTEXT * ctx)
 {
     if (cond)
         CONTEXT_set_PC(ctx, obj_get_as_REG(&d->op[0].val._v));
@@ -186,7 +186,7 @@ Da_emulate_result Da_emulate_Jcc (struct Da* d, bool cond, CONTEXT * ctx)
     return DA_EMULATED_OK;
 };
 
-Da_emulate_result Da_emulate_CMOVcc (struct Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
+enum Da_emulate_result Da_emulate_CMOVcc (struct Da* d, bool cond, CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     if (cond)
         return Da_emulate_MOV_op1_op2(d, ctx, mem, ins_prefixes, FS);
@@ -197,7 +197,7 @@ Da_emulate_result Da_emulate_CMOVcc (struct Da* d, bool cond, CONTEXT * ctx, Mem
     };
 };
 
-Da_emulate_result Da_emulate_SETcc (struct Da* d, bool cond, CONTEXT * ctx, MemoryCache *mem, unsigned ins_prefixes, address FS)
+enum Da_emulate_result Da_emulate_SETcc (struct Da* d, bool cond, CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     obj dst;
 
@@ -227,7 +227,7 @@ bool ins_traced_by_one_step(enum Ins_codes i)
     };
 };
 
-Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool emulate_FS_accesses, address FS)
+enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCache *mem, bool emulate_FS_accesses, address FS)
 {
     //bool SF=IS_SET(ctx->EFlags, FLAG_SF);
     //bool OF=IS_SET(ctx->EFlags, FLAG_OF);
@@ -605,7 +605,22 @@ Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool
                 if (d->ins_code==I_TEST)
                     b=true;
                 else
+		{
+		// debug (unchecked)
+/*
+		    strbuf tmp=STRBUF_INIT;
+ 		    strbuf_addf (&tmp, PRI_REG_HEX_PAD " ", CONTEXT_get_PC(ctx));
+		    Da_ToString (d, &tmp);
+		    strbuf_addstr(&tmp, " writing ");
+		    obj_to_strbuf(&tmp, &res);
+		    strbuf_addstr(&tmp, " to ");
+ 		    strbuf_addf (&tmp, PRI_REG_HEX_PAD, Da_op_calc_adr_of_op (&d->op[0], ctx, mem, d->prefix_codes, FS));
+                    L ("%s\n", tmp.buf);
+                    strbuf_deinit(&tmp);
+*/
+		// -----
                     b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS);
+		};
 
                 if (b)
                     goto add_to_PC_and_return_OK;
@@ -765,10 +780,31 @@ Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, MemoryCache *mem, bool
 
         case I_LEA:
             {
+		oassert (d->op[0].type==DA_OP_TYPE_REGISTER);
+		
                 address a=(address)Da_op_calc_adr_of_op(&d->op[1], ctx, mem, d->prefix_codes, FS);
-                obj val;
-                obj_REG2(a, &val);
-                b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS);
+		if (d->op[0].value_width_in_bits==__WORDSIZE)
+		{
+	                obj val;
+        	        obj_REG2(a, &val);
+                	b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS);
+		}
+		else if (__WORDSIZE==64 && d->op[0].value_width_in_bits==32)
+		{
+			// LEA reg32, [reg64+...] case.
+			// clear the whole reg:
+	                obj val;
+        	        obj_octa2(0, &val);
+			X86_register_set_value (_32_bit_X86_register_is_part_of_64_bit_reg (d->op[0].reg), ctx, &val);
+
+        	        obj_tetra2(a, &val);
+                	b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS);
+		}
+		else
+		{
+			oassert (0);
+		};
+
                 if (b==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
                 goto add_to_PC_and_return_OK;
@@ -962,7 +998,7 @@ add_to_PC_and_return_OK:
     return DA_EMULATED_OK;
 };
 
-const char* Da_emulate_result_to_string(Da_emulate_result r)
+const char* Da_emulate_result_to_string(enum Da_emulate_result r)
 {
     switch (r)
     {

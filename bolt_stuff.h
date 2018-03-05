@@ -17,10 +17,10 @@
 #include "memorycache.h"
 
 PNT_TIB get_TIB (HANDLE THDL);
-address TIB_get_stack_top (HANDLE THDL, MemoryCache *mem);
-address TIB_get_stack_bottom (HANDLE THDL, MemoryCache *mem);
-address TIB_get_exceptionlist (HANDLE THDL, MemoryCache *mem);
-bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, MemoryCache *mem);
-address TIB_get_current_SEH_frame (MemoryCache *mc, HANDLE THDL);
+address TIB_get_stack_top (HANDLE THDL, struct MemoryCache *mem);
+address TIB_get_stack_bottom (HANDLE THDL, struct MemoryCache *mem);
+address TIB_get_exceptionlist (HANDLE THDL, struct MemoryCache *mem);
+bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, struct MemoryCache *mem);
+address TIB_get_current_SEH_frame (struct MemoryCache *mc, HANDLE THDL);
 
 /* vim: set expandtab ts=4 sw=4 : */

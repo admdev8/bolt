@@ -1,3 +1,7 @@
+2018-03-05  Dennis Yurichev <dennis@yurichev.com>
+
+	* MSVC 2015.
+
 2017-10-09  Dennis Yurichev <dennis@yurichev.com>
 
 	* No more autotools and getopt

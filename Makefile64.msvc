@@ -1,0 +1,66 @@
+OPTIONS=/D__WORDSIZE=64 /Zi /D_DEBUG /DRE_USE_MALLOC /I../octothorpe /I../porg /I../x86_disasm
+OBJECTS=bolt_stuff.obj CONTEXT_utils.obj disas_utils.obj memorycache.obj PE.obj PE_filling_code_patterns.obj PE_imports.obj X86_emu.obj \
+	X86_register_helpers.obj intrin_MSVC_x64.obj
+
+all: bolt64.lib execs64
+
+bolt64.lib: $(OBJECTS)
+	lib.exe $(OBJECTS) /OUT:bolt64.lib
+
+intrin_MSVC_x64.obj: intrin_MSVC_x64.asm intrin_MSVC_x64.h
+	ml64 /c intrin_MSVC_x64.asm
+
+bolt_stuff.obj: bolt_stuff.c bolt_stuff.h
+	cl bolt_stuff.c /c $(OPTIONS)
+
+CONTEXT_utils.obj: CONTEXT_utils.c CONTEXT_utils.h
+	cl CONTEXT_utils.c /c $(OPTIONS)
+
+disas_utils.obj: disas_utils.c disas_utils.h
+	cl disas_utils.c /c $(OPTIONS)
+
+memorycache.obj: memorycache.c memorycache.h
+	cl memorycache.c /c $(OPTIONS)
+
+PE.obj: PE.c PE.h
+	cl PE.c /c $(OPTIONS)
+
+PE_filling_code_patterns.obj: PE_filling_code_patterns.c PE_filling_code_patterns.h
+	cl PE_filling_code_patterns.c /c $(OPTIONS)
+
+PE_imports.obj: PE_imports.c PE_imports.h
+	cl PE_imports.c /c $(OPTIONS)
+
+X86_emu.obj: X86_emu.c X86_emu.h
+	cl X86_emu.c /c $(OPTIONS)
+
+X86_register_helpers.obj: X86_register_helpers.c X86_register_helpers.h
+	cl X86_register_helpers.c /c $(OPTIONS)
+
+execs64: PE_add_imports64.exe PE_dump_imports64.exe PE_patcher64.exe PE_remove_import64.exe PE_search_str_refs64.exe PE_remove_import_test64.exe X86_emu_test64.exe
+
+PE_add_imports64.exe: PE_add_imports.c bolt64.lib
+	cl PE_add_imports.c $(OPTIONS) /Fe: PE_add_imports64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
+
+PE_dump_imports64.exe: PE_dump_imports.c bolt64.lib
+	cl PE_dump_imports.c $(OPTIONS) /Fe: PE_dump_imports64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
+
+PE_patcher64.exe: PE_patcher.c bolt64.lib
+	cl PE_patcher.c $(OPTIONS) /Fe: PE_patcher64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
+
+PE_remove_import64.exe: PE_remove_import.c bolt64.lib
+	cl PE_remove_import.c $(OPTIONS) /Fe: PE_remove_import64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
+
+PE_search_str_refs64.exe: PE_search_str_refs.c bolt64.lib
+	cl PE_search_str_refs.c $(OPTIONS) /Fe: PE_search_str_refs64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
+
+X86_emu_test64.exe: X86_emu_test.c bolt64.lib
+	cl X86_emu_test.c $(OPTIONS) /Fe: X86_emu_test64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
+
+PE_remove_import_test64.exe: PE_remove_import_test.c
+	cl PE_remove_import_test.c $(OPTIONS) /Fe: PE_remove_import_test64.exe
+
+clean:
+	del *.obj
+	del *.exe
+	del bolt64.lib
