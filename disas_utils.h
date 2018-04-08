@@ -30,7 +30,7 @@ extern "C" {
 
 bool Da_op_get_value_of_op (struct Da_op *op, address * rt_adr, const CONTEXT * ctx, struct MemoryCache *mem, const char *fname, 
         unsigned fileline, obj *result, unsigned ins_prefixes, address FS);
-bool Da_op_set_value_of_op (struct Da_op* op, obj *val, CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS);
+bool Da_op_set_value_of_op (struct Da_op* op, obj *val, CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS, bool clear_high_tetra_if_ExX);
 address Da_op_calc_adr_of_op (struct Da_op* op, const CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS);
 
 #ifdef  __cplusplus

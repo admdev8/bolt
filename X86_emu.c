@@ -152,8 +152,12 @@ enum Da_emulate_result Da_emulate_MOV_op1_op2(struct Da* d, CONTEXT * ctx, struc
         r=DA_EMULATED_CANNOT_READ_MEMORY;
         goto exit;
     };
-
-    b=Da_op_set_value_of_op (&d->op[0], &tmp, ctx, mem, d->prefix_codes, FS);
+/*
+    printf ("tmp:\n");
+    obj_dump(&tmp);
+    printf ("\n");
+*/
+    b=Da_op_set_value_of_op (&d->op[0], &tmp, ctx, mem, d->prefix_codes, FS, true);
 
     if (b==false)
     {
@@ -203,7 +207,7 @@ enum Da_emulate_result Da_emulate_SETcc (struct Da* d, bool cond, CONTEXT * ctx,
 
     obj_byte2 (cond ? 1 : 0, &dst);
 
-    bool b=Da_op_set_value_of_op (&d->op[0], &dst, ctx, mem, d->prefix_codes, FS);
+    bool b=Da_op_set_value_of_op (&d->op[0], &dst, ctx, mem, d->prefix_codes, FS, false);
     if (b==false)
         return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
@@ -300,7 +304,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                     return DA_EMULATED_CANNOT_READ_MEMORY;
                 obj v;
                 obj_REG2 (val, &v);
-                Da_op_set_value_of_op (&d->op[0], &v, ctx, mem, d->prefix_codes, FS);
+                Da_op_set_value_of_op (&d->op[0], &v, ctx, mem, d->prefix_codes, FS, false);
                 goto add_to_PC_and_return_OK;
             };
             break;
@@ -332,22 +336,34 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
         case I_REP_STOSB:
         case I_REP_STOSW:
         case I_REP_STOSD:
+        case I_REP_STOSQ:
             {
+                return DA_NOT_EMULATED;
+
                 BYTE *buf;
                 bool DF=IS_SET(ctx->EFlags, FLAG_DF);
                 if (DF)
+                {
+                    L ("%s() I_REP_STOSx: DF=true, skip emulating.\n", __func__);
                     return DA_NOT_EMULATED; // not supported... bug here
+                };
 
-                SIZE_T BUF_SIZE;
+                size_t buf_size;
 
                 if (d->ins_code==I_REP_STOSB)
-                    BUF_SIZE=CONTEXT_get_xCX (ctx);
+                    buf_size=CONTEXT_get_xCX (ctx);
                 else if (d->ins_code==I_REP_STOSW)
-                    BUF_SIZE=CONTEXT_get_xCX (ctx)*2;
+                    buf_size=CONTEXT_get_xCX (ctx)*2;
                 else if (d->ins_code==I_REP_STOSD)
-                    BUF_SIZE=CONTEXT_get_xCX (ctx)*4;
+                    buf_size=CONTEXT_get_xCX (ctx)*4;
+                else if (d->ins_code==I_REP_STOSQ)
+                    buf_size=CONTEXT_get_xCX (ctx)*8;
+		else
+		{
+			oassert(0);
+		};
 
-                buf=DMALLOC(BYTE, BUF_SIZE, "buf");
+                buf=DMALLOC(BYTE, buf_size, "buf");
 
                 if (d->ins_code==I_REP_STOSB)
                 {
@@ -364,15 +380,23 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                     for (REG i=0; i<CONTEXT_get_xCX(ctx); i++) // FIXME: rewrite to my own bzero()!
                         ((DWORD*)buf)[i]=(DWORD)(CONTEXT_get_Accum(ctx)&0xFFFFFFFF);
                 } 
+                else if (d->ins_code==I_REP_STOSQ)
+                {
+                    for (REG i=0; i<CONTEXT_get_xCX(ctx); i++) // FIXME: rewrite to my own bzero()!
+                        ((octa*)buf)[i]=(octa)CONTEXT_get_Accum(ctx);
+                } 
                 else
                 {
                     oassert(0);
                 };
 
-                if (MC_WriteBuffer (mem, CONTEXT_get_xDI (ctx), BUF_SIZE, buf)==false)
+                if (MC_WriteBuffer (mem, CONTEXT_get_xDI (ctx), buf_size, buf)==false)
+                {
+                    L ("%s() I_REP_STOSx: DA_EMULATED_CANNOT_WRITE_MEMORY\n", __func__);
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
+                };
                 DFREE(buf);
-                CONTEXT_set_xDI (ctx, CONTEXT_get_xDI (ctx) + BUF_SIZE);
+                CONTEXT_set_xDI (ctx, CONTEXT_get_xDI (ctx) + buf_size);
                 CONTEXT_set_xCX (ctx, 0);
                 goto add_to_PC_and_return_OK;
             };
@@ -518,7 +542,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                     get_sign_bit (d->op[0].value_width_in_bits);
                 set_or_clear_flag (ctx, FLAG_OF, tmp);
 
-                b=Da_op_set_value_of_op (&d->op[0], &res_sum, ctx, mem, d->prefix_codes, FS);
+                b=Da_op_set_value_of_op (&d->op[0], &res_sum, ctx, mem, d->prefix_codes, FS, false);
                 if (b==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
                 goto add_to_PC_and_return_OK;
@@ -535,7 +559,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                 obj_NOT(&rt1, &res);
 		// according to intel manuals, NOT not affects any flags
 
-                if (Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS))
+                if (Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS, false))
                     goto add_to_PC_and_return_OK;
             };
             break;
@@ -557,7 +581,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                 REMOVE_BIT (ctx->EFlags, FLAG_OF);
                 //SET_BIT (ctx->EFlags, FLAG_AF);
 
-                if (Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS))
+                if (Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS, false))
                     goto add_to_PC_and_return_OK;
             };
             break;
@@ -619,7 +643,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                     strbuf_deinit(&tmp);
 */
 		// -----
-                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS);
+                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS, true);
 		};
 
                 if (b)
@@ -684,7 +708,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                 if (d->ins_code==I_CMP)
                     b=true;
                 else
-                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS);
+                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS, false);
 
                 if (b)
                     goto add_to_PC_and_return_OK;
@@ -707,10 +731,10 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
 
-                if (Da_op_set_value_of_op (&d->op[0], &op2, ctx, mem, d->prefix_codes, FS)==false)
+                if (Da_op_set_value_of_op (&d->op[0], &op2, ctx, mem, d->prefix_codes, FS, false)==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
-                if (Da_op_set_value_of_op (&d->op[1], &op1, ctx, mem, d->prefix_codes, FS)==false)
+                if (Da_op_set_value_of_op (&d->op[1], &op1, ctx, mem, d->prefix_codes, FS, false)==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
                 goto add_to_PC_and_return_OK;
@@ -758,8 +782,8 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                     oassert (0);
                 };
 
-                b=Da_op_set_value_of_op (&d->op[0], &to_be_stored_v, ctx, mem, d->prefix_codes, FS);
-
+                b=Da_op_set_value_of_op (&d->op[0], &to_be_stored_v, ctx, mem, d->prefix_codes, FS, true);
+                
                 if (b==false)
                 {
                     /*
@@ -781,13 +805,15 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
         case I_LEA:
             {
 		oassert (d->op[0].type==DA_OP_TYPE_REGISTER);
-		
+
                 address a=(address)Da_op_calc_adr_of_op(&d->op[1], ctx, mem, d->prefix_codes, FS);
+		//L ("%s() line %d I_LEA, a=0x" PRI_REG_HEX "\n", __func__, __LINE__, a);
 		if (d->op[0].value_width_in_bits==__WORDSIZE)
 		{
 	                obj val;
         	        obj_REG2(a, &val);
-                	b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS);
+                	b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS, false);
+			//L ("%s() line %d\n", __func__, __LINE__);
 		}
 		else if (__WORDSIZE==64 && d->op[0].value_width_in_bits==32)
 		{
@@ -795,10 +821,11 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
 			// clear the whole reg:
 	                obj val;
         	        obj_octa2(0, &val);
-			X86_register_set_value (_32_bit_X86_register_is_part_of_64_bit_reg (d->op[0].reg), ctx, &val);
+			X86_register_set_value (_32_bit_X86_register_is_part_of_64_bit_reg (d->op[0].reg), ctx, &val, false);
 
         	        obj_tetra2(a, &val);
-                	b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS);
+                	b=Da_op_set_value_of_op (&d->op[0], &val, ctx, mem, d->prefix_codes, FS, false);
+			//L ("%s() line %d\n", __func__, __LINE__);
 		}
 		else
 		{
@@ -857,7 +884,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                         obj_REG2_and_set_type(op1.t, new_v, 0, &new_op1);
                     };
 
-                    if (Da_op_set_value_of_op (&d->op[0], &new_op1, ctx, mem, d->prefix_codes, FS)==false)
+                    if (Da_op_set_value_of_op (&d->op[0], &new_op1, ctx, mem, d->prefix_codes, FS, false)==false)
                         return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
                     set_PF (ctx, &new_op1);
@@ -966,6 +993,11 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                 bool b=Da_op_get_value_of_op(&d->op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &rt, d->prefix_codes, FS);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
+#ifdef _WIN64
+		// FIXME!
+		if (rt.t==OBJ_TETRA)
+                    return DA_EMULATED_CANNOT_READ_MEMORY;
+#endif
                 CONTEXT_set_PC(ctx, obj_get_as_REG(&rt));
                 return DA_EMULATED_OK;
             };

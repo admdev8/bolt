@@ -25,7 +25,7 @@ extern "C" {
 
 void X86_register_get_value (enum X86_register r, const CONTEXT *ctx, obj* out);
 uint64_t X86_register_get_value_as_u64 (enum X86_register r, const CONTEXT *ctx);
-void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj* val);
+void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val, bool clear_high_tetra_if_ExX);
 
 #ifdef  __cplusplus
 }

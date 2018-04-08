@@ -218,10 +218,19 @@ uint64_t X86_register_get_value_as_u64 (enum X86_register r, const CONTEXT *ctx)
     return rt;
 };
 
-void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
+void clear_high_tetra (octa *a)
+{
+	*a=((*a)<<32)>>32;
+};
+
+void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val, bool clear_high_tetra_if_ExX)
 {
     unsigned idx;
-
+/*
+    printf ("%s() r=%s, val=", __func__, X86_register_ToString(r));
+    obj_dump(val);
+    printf ("\n");
+*/
     switch (r)
     {
         case R_XMM0:
@@ -286,14 +295,14 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
         case R_R14: ctx->R14=obj_get_as_octa (val); break;
         case R_R15: ctx->R15=obj_get_as_octa (val); break;
 
-        case R_R8D:  ctx->R8= (ctx->R8&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); break;
-        case R_R9D:  ctx->R9= (ctx->R9&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); break;
-        case R_R10D: ctx->R10=(ctx->R10&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
-        case R_R11D: ctx->R11=(ctx->R11&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
-        case R_R12D: ctx->R12=(ctx->R12&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
-        case R_R13D: ctx->R13=(ctx->R13&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
-        case R_R14D: ctx->R14=(ctx->R14&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
-        case R_R15D: ctx->R15=(ctx->R15&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); break;
+        case R_R8D:  ctx->R8= (ctx->R8&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R8); break;
+        case R_R9D:  ctx->R9= (ctx->R9&0xFFFFFFFF00000000)  | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R9); break;
+        case R_R10D: ctx->R10=(ctx->R10&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R10); break;
+        case R_R11D: ctx->R11=(ctx->R11&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R11); break;
+        case R_R12D: ctx->R12=(ctx->R12&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R12); break;
+        case R_R13D: ctx->R13=(ctx->R13&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R13); break;
+        case R_R14D: ctx->R14=(ctx->R14&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R14); break;
+        case R_R15D: ctx->R15=(ctx->R15&0xFFFFFFFF00000000) | (obj_get_as_tetra (val)); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->R15); break;
 
         case R_R8L: ctx->R8=(ctx->R8&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
         case R_R9L: ctx->R9=(ctx->R9&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
@@ -314,13 +323,13 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val)
 
         case R_RIP:  ctx->Rip=obj_get_as_octa (val); break;
 
-        case R_EAX: ctx->Rax=(ctx->Rax&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
-        case R_EBX: ctx->Rax=(ctx->Rbx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
-        case R_ECX: ctx->Rax=(ctx->Rcx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
-        case R_EDX: ctx->Rax=(ctx->Rdx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
-        case R_ESI: ctx->Rax=(ctx->Rsi&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
-        case R_EDI: ctx->Rax=(ctx->Rdi&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
-        case R_EBP: ctx->Rbp=(ctx->Rbp&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); break;
+        case R_EAX: ctx->Rax=(ctx->Rax&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->Rax); break;
+        case R_EBX: ctx->Rbx=(ctx->Rbx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->Rbx); break;
+        case R_ECX: ctx->Rcx=(ctx->Rcx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->Rcx); break;
+        case R_EDX: ctx->Rdx=(ctx->Rdx&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->Rdx); break;
+        case R_ESI: ctx->Rsi=(ctx->Rsi&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->Rsi); break;
+        case R_EDI: ctx->Rdi=(ctx->Rdi&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->Rdi); break;
+        case R_EBP: ctx->Rbp=(ctx->Rbp&0xFFFFFFFF00000000)  | obj_get_as_tetra (val); if (clear_high_tetra_if_ExX) clear_high_tetra(&ctx->Rbp); break;
 #else
         case R_EAX: ctx->Eax=obj_get_as_tetra (val); break;
         case R_EBX: ctx->Ebx=obj_get_as_tetra (val); break;

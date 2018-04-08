@@ -117,14 +117,15 @@ bool Da_op_get_value_of_op (struct Da_op *op, address * rt_adr, const CONTEXT * 
     fatal_error();
 };
 
-bool Da_op_set_value_of_op (struct Da_op* op, obj *val, CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS) 
+bool Da_op_set_value_of_op (struct Da_op* op, obj *val, CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS, bool clear_high_tetra_if_ExX) 
 {
     address adr;
 
     switch (op->type)
     {
         case DA_OP_TYPE_REGISTER:
-            X86_register_set_value (op->reg, ctx, val);
+            //L ("%s() line %d clear_high_tetra_if_ExX=%d\n", __FUNCTION__, __LINE__, clear_high_tetra_if_ExX);
+            X86_register_set_value (op->reg, ctx, val, clear_high_tetra_if_ExX);
             return true;
 
         case DA_OP_TYPE_VALUE_IN_MEMORY:
@@ -173,6 +174,15 @@ COPY_FAILED:
     return false;
 };
 
+/*
+#if __WORDSIZE==64
+#define SREG int64_t
+#elif __WORDSIZE==32
+#define SREG int32_t
+#else
+#error "stop"
+#endif
+*/
 address Da_op_calc_adr_of_op (struct Da_op* op, const CONTEXT * ctx, struct MemoryCache *mem, unsigned ins_prefixes, address FS)
 {
     address adr=0;
@@ -184,10 +194,25 @@ address Da_op_calc_adr_of_op (struct Da_op* op, const CONTEXT * ctx, struct Memo
     if (op->adr.adr_base != R_ABSENT)
         adr=adr+X86_register_get_value_as_u64 (op->adr.adr_base, ctx);
 
+    L ("%s() line=%d adr=0x" PRI_REG_HEX "\n", __func__, __LINE__, adr);
+    
     if (op->adr.adr_index != R_ABSENT)
         adr=adr+X86_register_get_value_as_u64(op->adr.adr_index, ctx) * op->adr.adr_index_mult;
 
-    rt=adr+op->adr.adr_disp; // negative values of adr_disp must work! (to be checked)
+    L ("%s() line=%d adr=0x" PRI_REG_HEX "\n", __func__, __LINE__, adr);
+
+    L ("%s() line=%d op->adr.adr_disp=0x" PRI_REG_HEX "\n", __func__, __LINE__, op->adr.adr_disp);
+/*
+    if (__WORDSIZE==64 && op->value_width_in_bits==32)
+    {
+        rt=adr+(int64_t)(int32_t)op->adr.adr_disp; // negative values of adr_disp must work! (to be checked)
+        L ("%s() line=%d (int64_t)(int32_t)op->adr.adr_disp=0x" PRI_REG_HEX "\n", __func__, __LINE__, (int64_t)(int32_t)op->adr.adr_disp);
+    }
+    else
+*/
+        rt=adr+op->adr.adr_disp; // negative values of adr_disp must work! (to be checked)
+
+    L ("%s() line=%d rt=0x" PRI_REG_HEX "\n", __func__, __LINE__, rt);
 
     if (IS_SET(ins_prefixes, PREFIX_FS))
         rt+=FS;

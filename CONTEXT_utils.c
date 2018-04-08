@@ -470,7 +470,9 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
 
     unsigned i;
 #ifdef _WIN64
-    oassert(!"should be rewritten");
+    //FIXME:
+    //oassert(!"should be rewritten");
+    //L_fds (s, "%s() warning! should be rewritten\n", __func__);
     if (ctx1->Rax!=ctx2->Rax) { L_fds (s, "ctx1->RAX=0x" PRI_REG_HEX_PAD " ctx2->RAX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rax, ctx2->Rax); rt=false; }
     if (ctx1->Rbx!=ctx2->Rbx) { L_fds (s, "ctx1->RBX=0x" PRI_REG_HEX_PAD " ctx2->RBX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rbx, ctx2->Rbx); rt=false; }
     if (ctx1->Rcx!=ctx2->Rcx) { L_fds (s, "ctx1->RCX=0x" PRI_REG_HEX_PAD " ctx2->RCX=0x" PRI_REG_HEX_PAD "\n", ctx1->Rcx, ctx2->Rcx); rt=false; }
