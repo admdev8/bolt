@@ -194,14 +194,14 @@ address Da_op_calc_adr_of_op (struct Da_op* op, const CONTEXT * ctx, struct Memo
     if (op->adr.adr_base != R_ABSENT)
         adr=adr+X86_register_get_value_as_u64 (op->adr.adr_base, ctx);
 
-    L ("%s() line=%d adr=0x" PRI_REG_HEX "\n", __func__, __LINE__, adr);
+    //L ("%s() line=%d adr=0x" PRI_REG_HEX "\n", __func__, __LINE__, adr);
     
     if (op->adr.adr_index != R_ABSENT)
         adr=adr+X86_register_get_value_as_u64(op->adr.adr_index, ctx) * op->adr.adr_index_mult;
 
-    L ("%s() line=%d adr=0x" PRI_REG_HEX "\n", __func__, __LINE__, adr);
+    //L ("%s() line=%d adr=0x" PRI_REG_HEX "\n", __func__, __LINE__, adr);
 
-    L ("%s() line=%d op->adr.adr_disp=0x" PRI_REG_HEX "\n", __func__, __LINE__, op->adr.adr_disp);
+    //L ("%s() line=%d op->adr.adr_disp=0x" PRI_REG_HEX "\n", __func__, __LINE__, op->adr.adr_disp);
 /*
     if (__WORDSIZE==64 && op->value_width_in_bits==32)
     {
@@ -212,7 +212,7 @@ address Da_op_calc_adr_of_op (struct Da_op* op, const CONTEXT * ctx, struct Memo
 */
         rt=adr+op->adr.adr_disp; // negative values of adr_disp must work! (to be checked)
 
-    L ("%s() line=%d rt=0x" PRI_REG_HEX "\n", __func__, __LINE__, rt);
+    //L ("%s() line=%d rt=0x" PRI_REG_HEX "\n", __func__, __LINE__, rt);
 
     if (IS_SET(ins_prefixes, PREFIX_FS))
         rt+=FS;

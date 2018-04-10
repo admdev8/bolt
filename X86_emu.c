@@ -708,7 +708,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                 if (d->ins_code==I_CMP)
                     b=true;
                 else
-                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS, false);
+                    b=Da_op_set_value_of_op (&d->op[0], &res, ctx, mem, d->prefix_codes, FS, true);
 
                 if (b)
                     goto add_to_PC_and_return_OK;

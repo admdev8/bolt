@@ -313,6 +313,8 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val, bool c
         case R_R14L: ctx->R14=(ctx->R14&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
         case R_R15L: ctx->R15=(ctx->R15&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
 
+        case R_BPL: ctx->Rbp=(ctx->Rbp&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+
         case R_DIL: ctx->Rdi=(ctx->Rdi&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
         case R_SIL: ctx->Rsi=(ctx->Rsi&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
 
@@ -320,6 +322,11 @@ void X86_register_set_value (enum X86_register r, CONTEXT *ctx, obj *val, bool c
         case R_BL: ctx->Rbx=(ctx->Rbx&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
         case R_CL: ctx->Rcx=(ctx->Rcx&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
         case R_DL: ctx->Rdx=(ctx->Rdx&0xFFFFFFFFFFFFFF00) | (obj_get_as_byte(val)); break;
+
+        case R_AX: ctx->Rax=(ctx->Rax&0xFFFFFFFFFFFF0000) | (obj_get_as_wyde(val)); break;
+        case R_BX: ctx->Rbx=(ctx->Rbx&0xFFFFFFFFFFFF0000) | (obj_get_as_wyde(val)); break;
+        case R_CX: ctx->Rcx=(ctx->Rcx&0xFFFFFFFFFFFF0000) | (obj_get_as_wyde(val)); break;
+        case R_DX: ctx->Rdx=(ctx->Rdx&0xFFFFFFFFFFFF0000) | (obj_get_as_wyde(val)); break;
 
         case R_RIP:  ctx->Rip=obj_get_as_octa (val); break;
 
