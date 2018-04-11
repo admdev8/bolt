@@ -37,7 +37,7 @@ X86_emu.obj: X86_emu.c X86_emu.h
 X86_register_helpers.obj: X86_register_helpers.c X86_register_helpers.h
 	cl X86_register_helpers.c /c $(OPTIONS)
 
-execs64: PE_add_imports64.exe PE_dump_imports64.exe PE_patcher64.exe PE_remove_import64.exe PE_search_str_refs64.exe PE_remove_import_test64.exe X86_emu_test64.exe
+execs64: PE_add_imports64.exe PE_dump_imports64.exe PE_patcher64.exe PE_patch_CALL_JMP_import64.exe PE_search_str_refs64.exe PE_patch_CALL_JMP_import_test64.exe X86_emu_test64.exe
 
 PE_add_imports64.exe: PE_add_imports.c bolt64.lib
 	cl PE_add_imports.c $(OPTIONS) /Fe: PE_add_imports64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
@@ -48,8 +48,8 @@ PE_dump_imports64.exe: PE_dump_imports.c bolt64.lib
 PE_patcher64.exe: PE_patcher.c bolt64.lib
 	cl PE_patcher.c $(OPTIONS) /Fe: PE_patcher64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
 
-PE_remove_import64.exe: PE_remove_import.c bolt64.lib
-	cl PE_remove_import.c $(OPTIONS) /Fe: PE_remove_import64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
+PE_patch_CALL_JMP_import64.exe: PE_patch_CALL_JMP_import.c bolt64.lib
+	cl PE_patch_CALL_JMP_import.c $(OPTIONS) /Fe: PE_patch_CALL_JMP_import64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
 
 PE_search_str_refs64.exe: PE_search_str_refs.c bolt64.lib
 	cl PE_search_str_refs.c $(OPTIONS) /Fe: PE_search_str_refs64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
@@ -57,8 +57,8 @@ PE_search_str_refs64.exe: PE_search_str_refs.c bolt64.lib
 X86_emu_test64.exe: X86_emu_test.c bolt64.lib
 	cl X86_emu_test.c $(OPTIONS) /Fe: X86_emu_test64.exe bolt64.lib ../octothorpe/octothorpe64.lib ../porg/porg64.lib ../x86_disasm/x86_disasm64.lib imagehlp.lib advapi32.lib
 
-PE_remove_import_test64.exe: PE_remove_import_test.c
-	cl PE_remove_import_test.c $(OPTIONS) /Fe: PE_remove_import_test64.exe
+PE_patch_CALL_JMP_import_test64.exe: PE_patch_CALL_JMP_import_test.c
+	cl PE_patch_CALL_JMP_import_test.c $(OPTIONS) /Fe: PE_patch_CALL_JMP_import_test64.exe
 
 clean:
 	del *.obj

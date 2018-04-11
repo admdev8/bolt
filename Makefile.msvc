@@ -37,7 +37,7 @@ X86_emu.obj: X86_emu.c X86_emu.h
 X86_register_helpers.obj: X86_register_helpers.c X86_register_helpers.h
 	cl X86_register_helpers.c /c $(OPTIONS)
 
-execs: PE_add_imports.exe PE_dump_imports.exe PE_patcher.exe PE_remove_import.exe PE_search_str_refs.exe PE_remove_import_test.exe X86_emu_test.exe
+execs: PE_add_imports.exe PE_dump_imports.exe PE_patcher.exe PE_patch_CALL_JMP_import.exe PE_search_str_refs.exe PE_patch_CALL_JMP_import_test.exe X86_emu_test.exe
 
 PE_add_imports.exe: PE_add_imports.c bolt.lib
 	cl PE_add_imports.c $(OPTIONS) /Fe: PE_add_imports.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
@@ -48,8 +48,8 @@ PE_dump_imports.exe: PE_dump_imports.c bolt.lib
 PE_patcher.exe: PE_patcher.c bolt.lib
 	cl PE_patcher.c $(OPTIONS) /Fe: PE_patcher.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
 
-PE_remove_import.exe: PE_remove_import.c bolt.lib
-	cl PE_remove_import.c $(OPTIONS) /Fe: PE_remove_import.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
+PE_patch_CALL_JMP_import.exe: PE_patch_CALL_JMP_import.c bolt.lib
+	cl PE_patch_CALL_JMP_import.c $(OPTIONS) /Fe: PE_patch_CALL_JMP_import.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
 
 PE_search_str_refs.exe: PE_search_str_refs.c bolt.lib
 	cl PE_search_str_refs.c $(OPTIONS) /Fe: PE_search_str_refs.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
@@ -57,8 +57,8 @@ PE_search_str_refs.exe: PE_search_str_refs.c bolt.lib
 X86_emu_test.exe: X86_emu_test.c bolt.lib
 	cl X86_emu_test.c $(OPTIONS) /Fe: X86_emu_test.exe bolt.lib ../octothorpe/octothorpe.lib ../porg/porg.lib ../x86_disasm/x86_disasm.lib imagehlp.lib advapi32.lib
 
-PE_remove_import_test.exe: PE_remove_import_test.c
-	cl PE_remove_import_test.c $(OPTIONS) /Fe: PE_remove_import_test.exe
+PE_patch_CALL_JMP_import_test.exe: PE_patch_CALL_JMP_import_test.c
+	cl PE_patch_CALL_JMP_import_test.c $(OPTIONS) /Fe: PE_patch_CALL_JMP_import_test.exe
 
 clean:
 	del *.obj
