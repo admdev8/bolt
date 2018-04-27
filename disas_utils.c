@@ -28,7 +28,7 @@ bool Da_op_get_value_of_op (struct Da_op *op, address * rt_adr, const CONTEXT * 
     if (op->type==DA_OP_TYPE_REGISTER)
     {
         oassert (op->reg != R_ABSENT);
-        // вытянуть из ctx
+        // get from ctx
         X86_register_get_value (op->reg, ctx, result);
         return true;
     };

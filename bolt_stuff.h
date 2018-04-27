@@ -22,5 +22,6 @@ address TIB_get_stack_bottom (HANDLE THDL, struct MemoryCache *mem);
 address TIB_get_exceptionlist (HANDLE THDL, struct MemoryCache *mem);
 bool TIB_is_ptr_in_stack_limits (HANDLE THDL, address p, struct MemoryCache *mem);
 address TIB_get_current_SEH_frame (struct MemoryCache *mc, HANDLE THDL);
+address get_PEB(HANDLE PHDL);
 
 /* vim: set expandtab ts=4 sw=4 : */

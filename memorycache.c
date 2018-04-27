@@ -6,7 +6,7 @@
  * | |_) | (_) | | |_ 
  * |_.__/ \___/|_|\__|
  *
- * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013
+ * Written by Dennis Yurichev <dennis(a)yurichev.com>, 2013-2018
  *
  * This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License. 
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-nd/3.0/.
@@ -20,6 +20,7 @@
 #include "porg_mem_utils.h"
 #include "oassert.h"
 #include "fmt_utils.h"
+#include "files.h"
 
 struct MemoryCache* MC_MemoryCache_ctor(HANDLE PHDL, bool dont_read_from_quicksilver_places)
 {
@@ -294,7 +295,7 @@ bool MC_ReadTetrabyte (struct MemoryCache *mc, address adr, DWORD * out)
 	// а если этот DWORD на границе двух страниц...
 	if (adr_frac>(PAGE_SIZE-sizeof(DWORD)))
 	{
-		BYTE b1=0, b2=0, b3=0, b4=0; // TMCH
+		BYTE b1=0, b2=0, b3=0, b4=0;
 		bool read_OK=true;
 
 		if (MC_ReadByte(mc, adr+3, &b1)==false)
@@ -459,6 +460,12 @@ void MC_Flush(struct MemoryCache *mc)
 					if (VirtualProtectEx(mc->PHDL, info.BaseAddress, info.RegionSize, tmp, &tmp2)==FALSE)
 						die ("%s(): second VirtualProtectEx() failed. exiting.\n", __func__);
 				};
+				strbuf tmp=STRBUF_INIT;
+				strbuf_addf (&tmp, "block_0x%" PRIx64, adr);
+				save_file_or_die(tmp.buf, v->block, PAGE_SIZE);
+				printf ("%s written\n", tmp.buf);
+				strbuf_deinit(&tmp);
+
 			v->to_be_flushed=false;
 		};
 	};

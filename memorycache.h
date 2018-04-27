@@ -43,7 +43,7 @@ struct MemoryCacheElement
 struct MemoryCache
 {
     HANDLE PHDL;
-    // key: адрес без последних 12 бит; value: ссылка на структуру MemoryCacheElement
+    // key: address with no last 12 bits; value: ptr to MemoryCacheElement structure
     rbtree* _cache;
 
     BYTE * last_ptr;

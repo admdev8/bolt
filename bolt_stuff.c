@@ -112,4 +112,51 @@ address TIB_get_current_SEH_frame (struct MemoryCache *mc, HANDLE THDL)
     return (address)TIB.ExceptionList;
 };
 
-/* vim: set expandtab ts=4 sw=4 : */
+typedef struct _PEB {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[1];
+    PVOID Reserved3[2];
+    /*PPEB_LDR_DATA*/ void* Ldr;
+    /*PRTL_USER_PROCESS_PARAMETERS*/ void* ProcessParameters;
+    BYTE Reserved4[104];
+    PVOID Reserved5[52];
+    /*PPS_POST_PROCESS_INIT_ROUTINE*/ void* PostProcessInitRoutine;
+    BYTE Reserved6[128];
+    PVOID Reserved7[1];
+    ULONG SessionId;
+} PEB, *PPEB;
+
+typedef struct _PROCESS_BASIC_INFORMATION {
+    PVOID Reserved1;
+    PPEB PebBaseAddress;
+    PVOID Reserved2[2];
+    ULONG_PTR UniqueProcessId;
+    PVOID Reserved3;
+} PROCESS_BASIC_INFORMATION;
+
+typedef enum _PROCESSINFOCLASS {
+    ProcessBasicInformation = 0,
+    ProcessWow64Information = 26
+} PROCESSINFOCLASS;
+
+address get_PEB(HANDLE PHDL)
+{
+	ULONG dwLength;
+	PROCESS_BASIC_INFORMATION pbi;
+
+	NTSTATUS (NTAPI * NtQueryInformationProcess_ptr)(HANDLE ProcessHandle, PROCESSINFOCLASS ProcessInformationClass, PVOID ProcessInformation,
+		ULONG ProcessInformationLength, PULONG ReturnLength);
+
+	NtQueryInformationProcess_ptr=(NTSTATUS (__stdcall *)(HANDLE,PROCESSINFOCLASS,PVOID,ULONG,PULONG))(GetProcAddress (LoadLibrary ("ntdll.dll"), "NtQueryInformationProcess"));
+
+	if (NtQueryInformationProcess_ptr==NULL)
+        	die ("ntdll.dll!NtQueryInformationProcess() was not found\n");
+
+	DWORD status=NtQueryInformationProcess_ptr(PHDL, ProcessBasicInformation, &pbi, sizeof(PROCESS_BASIC_INFORMATION), &dwLength);
+
+	if(status!=0x0)
+		die ("NtQueryInformationProcess() failed\n");
+
+	return pbi.PebBaseAddress;
+};

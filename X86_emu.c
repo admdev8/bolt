@@ -24,6 +24,7 @@
 #include "fmt_utils.h"
 
 bool x86_emu_debug=/*true*/ false;
+//bool x86_emu_debug=true;
 
 int parity_lookup[256] = {
     1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1,
@@ -884,7 +885,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                         obj_REG2_and_set_type(op1.t, new_v, 0, &new_op1);
                     };
 
-                    if (Da_op_set_value_of_op (&d->op[0], &new_op1, ctx, mem, d->prefix_codes, FS, false)==false)
+                    if (Da_op_set_value_of_op (&d->op[0], &new_op1, ctx, mem, d->prefix_codes, FS, true)==false)
                         return DA_EMULATED_CANNOT_WRITE_MEMORY;
 
                     set_PF (ctx, &new_op1);
@@ -1009,6 +1010,7 @@ enum Da_emulate_result Da_emulate(struct Da* d, CONTEXT * ctx, struct MemoryCach
                 bool b=Da_op_get_value_of_op(&d->op[0], &rt_adr, ctx, mem, __FILE__, __LINE__, &rt, d->prefix_codes, FS);
                 if (b==false)
                     return DA_EMULATED_CANNOT_READ_MEMORY;
+		//printf ("%s() I_CALL, PC->0x%" PRI_REG_HEX, obj_get_as_REG(&rt));
                 if (DO_PUSH(ctx, mem, CONTEXT_get_PC(ctx)+d->ins_len)==false)
                     return DA_EMULATED_CANNOT_WRITE_MEMORY;
                 CONTEXT_set_PC(ctx, obj_get_as_REG(&rt));

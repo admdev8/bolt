@@ -468,6 +468,8 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
     bool rt=true; // so far so good
     DWORD new_eflags1, new_eflags2;
 
+//#define COMPARE_DRx
+
     unsigned i;
 #ifdef _WIN64
     //FIXME:
@@ -500,6 +502,7 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
     if (ctx1->Eip!=ctx2->Eip) { L_fds (s, "ctx1->EIP=0x" PRI_REG_HEX_PAD " ctx2->EIP=0x" PRI_REG_HEX_PAD "\n", ctx1->Eip, ctx2->Eip); rt=false; }
     if (ctx1->Esp!=ctx2->Esp) { L_fds (s, "ctx1->ESP=0x" PRI_REG_HEX_PAD " ctx2->ESP=0x" PRI_REG_HEX_PAD "\n", ctx1->Esp, ctx2->Esp); rt=false; }
 #endif
+#ifdef COMPARE_DRx
     if (ctx1->Dr0!=ctx2->Dr0) { L_fds (s, "ctx1->DR0=0x" PRI_REG_HEX_PAD " ctx2->DR0=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr0, ctx2->Dr0); rt=false; }
     if (ctx1->Dr1!=ctx2->Dr1) { L_fds (s, "ctx1->DR1=0x" PRI_REG_HEX_PAD " ctx2->DR1=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr1, ctx2->Dr1); rt=false; }
     if (ctx1->Dr2!=ctx2->Dr2) { L_fds (s, "ctx1->DR2=0x" PRI_REG_HEX_PAD " ctx2->DR2=0x" PRI_REG_HEX_PAD "\n", ctx1->Dr2, ctx2->Dr2); rt=false; }
@@ -517,6 +520,7 @@ bool CONTEXT_compare (fds* s, CONTEXT * ctx1, CONTEXT * ctx2) // ignoring TP/TF 
 
         rt=false; 
     }
+#endif // COMPARE_DRx
     new_eflags1=ctx1->EFlags&(~FLAG_TF)&(~FLAG_RSRV1)&(~FLAG_RF);
     new_eflags2=ctx2->EFlags&(~FLAG_TF)&(~FLAG_RSRV1)&(~FLAG_RF);
     if (new_eflags1 != new_eflags2) 
